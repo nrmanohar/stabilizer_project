@@ -15,45 +15,78 @@ on:
 
 jobs:
   test:
-	@@ -22,43 +20,76 @@ jobs:
+    name: Test on ${{ matrix.os }}, Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [macOS-latest, ubuntu-latest, windows-latest]
-        python-version: [3.8, 3.9, "3.10"]
+        python-version: [3.7,3.8,3.9]
 
     steps:
-      - uses: actions/checkout@v1
+    - uses: actions/checkout@v1
 
-      - name: Additional info about the build
-        shell: bash
-        run: |
-          uname -a
-          df -h
-          ulimit -a
-      # More info on options: https://github.com/marketplace/actions/provision-with-micromamba
-      - uses: mamba-org/provision-with-micromamba@main
-        with:
-          environment-file: devtools/conda-envs/test_env.yaml
-          environment-name: test
-          channels: conda-forge,defaults
-          extra-specs: |
-            python=${{ matrix.python-version }}
+    - name: Additional info about the build
+      shell: bash
+      run: |
+        uname -a
+        df -h
+        ulimit -a
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
 
-      - name: Install package
-        # conda setup requires this special shell
-        shell: bash -l {0}
-        run: |
-          python -m pip install . --no-deps
-          micromamba list
-      - name: Run tests
-        # conda setup requires this special shell
-        shell: bash -l {0}
-        run: |
-          pytest -v --cov=stabilizer_project --cov-report=xml --color=yes stabilizer_project/tests/
+    - name: Testing Dependencies
+      shell: bash
+      run: |
+        python -m pip install -U pytest pytest-cov codecov
+        python -m pip install numpy
+        python -m pip install -U matplotlib
+        python -m pip install sphinx sphinx_rtd_theme
+    - name: Install package
 
-      - name: CodeCov
-        uses: codecov/codecov-action@v1
-        with:
-          file: ./coverage.xml
-          flags: unittests
-          name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}
+      shell: bash
+      run: |
+        python -m pip install .
+    
+    - name: Run tests
+
+      shell: bash
+
+      run: |
+        pytest -v --cov=stabilizer_project --cov-report=xml --color=yes stabilizer_project/tests/
+    - name: CodeCov
+      uses: codecov/codecov-action@v1
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}
+  docs:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - uses: ammaraskar/sphinx-action@master
+      with:
+        docs-folder: "docs/"
+
+    - name: Commit documentation changes
+      run: |
+        git clone https://github.com/nrmanohar/stabilizer_project.git --branch gh-pages --single-branch gh-pages
+        cp -r docs/_build/html/* gh-pages/
+        cd gh-pages
+        touch .nojekyll
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git commit -m "Update documentation" -a || true
+        # The above command will fail if no changes were present, so we ignore
+        # that.
+        
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        branch: gh-pages
+        directory: gh-pages
+        github_token: ${{ secrets.GITHUB_TOKEN }}
