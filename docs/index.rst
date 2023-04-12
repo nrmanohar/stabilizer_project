@@ -6,12 +6,15 @@
 Welcome to stabilizer_project's documentation!
 =========================================================
 
+stabilizer_project is a Python package designed to utilize the advantages of stabilizer states to help automate computations using classical manipulations.
+
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    getting_started
    api
+   about
 
 
 

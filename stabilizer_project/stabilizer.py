@@ -7,6 +7,13 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 class Stab:
+    '''
+    This is a simple class to calculate the hamiltonian for a spin configuration
+    :param size: Number of qubits
+    :type size: int, optional
+    :param stabs: The stabilizers, either in a string or a list
+    :type mu: string or list, optional
+    '''
     def __init__(self, n = 2, stabs = 'XX,ZZ'):
         self.size = n
         try:
