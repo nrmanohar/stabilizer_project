@@ -39,7 +39,7 @@ jobs:
     - name: Testing Dependencies
       shell: bash
       run: |
-        python -m pip install -U pytest pytest-cov codecov
+        python -m pip install -U pytest codecov
         python -m pip install numpy
         python -m pip install -U matplotlib
         python -m pip install sphinx sphinx_rtd_theme
