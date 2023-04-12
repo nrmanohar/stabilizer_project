@@ -23,7 +23,7 @@ jobs:
         python-version: [3.8, 3.9]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v1
 
       - name: Additional info about the build
         shell: bash
@@ -31,15 +31,27 @@ jobs:
           uname -a
           df -h
           ulimit -a
-      # More info on options: https://github.com/marketplace/actions/provision-with-micromamba
-      - uses: mamba-org/provision-with-micromamba@main
+        # More info on options: https://github.com/marketplace/actions/provision-with-micromamba
+        - uses: mamba-org/provision-with-micromamba@main
+          with:
+            environment-file: devtools/conda-envs/test_env.yaml
+            environment-name: test
+            channels: conda-forge,defaults
+            extra-specs: |
+              python=${{ matrix.python-version }}
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
         with:
-          environment-file: devtools/conda-envs/test_env.yaml
-          environment-name: test
-          channels: conda-forge,defaults
-          extra-specs: |
-            python=${{ matrix.python-version }}
+          python-version: ${{ matrix.python-version }}
 
+      - name: Testing Dependencies
+        shell: bash
+        run: |
+          python -m pip install -U pytest pytest-cov codecov
+          python -m pip install numpy
+          python -m pip install -U matplotlib
+          python -m pip install sphinx sphinx_rtd_theme
       - name: Install package
         # conda setup requires this special shell
         shell: bash -l {0}
