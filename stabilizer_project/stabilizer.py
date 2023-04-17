@@ -115,6 +115,42 @@ class Stab:
     def report(self):
         print(self.tab)
         print(self.signvector)
+    def gaussian(self):
+        pass
+    def circuit_builder(self):
+        size = self.size
+        rev_operations = []
+        reference = np.copy(self.tab)
+        for i in range(self.size):
+            if self.tab[i,i]==1:
+                continue
+            elif self.tab[i,self.size+i]==1:
+                self.clifford('h',i)
+                rev_operations.append('h,'+str(i))
+        for i in range(self.size):
+            for j in range(self.size):
+                if i != j:
+                    if self.tab[i,j]==1:
+                        self.clifford('CNOT',i,j)
+                        rev_operations.append('CNOT,'+str(i)+','+str(j))
+        for i in range(self.size):
+            if self.tab[i,self.size+i]==1:
+                if self.signvector[i]==0:
+                    rev_operations.append('s,'+str(i))
+                    self.clifford('s',i)
+                    self.clifford('z',i)
+                elif self.signvector[i]==1:
+                    rev_operations.append('sdag,'+str(i))
+                    self.clifford('s',i)
+        print(rev_operations)
+        print(self.tab)
+        self.tab = np.copy(reference)
+
+
+
+    
+
+
 
 
 
