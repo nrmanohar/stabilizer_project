@@ -7,16 +7,16 @@ dependencies:
  - python
  - pip
 
- # Package dependencies
+   # Package dependencies
  - numpy
  - matplotlib
  - qiskit
 
- # Testing
+   # Testing
  - pytest
  - pytest-cov
  - codecov
 
-  # Pip-only installs
+   # Pip-only installs
  #- pip:
  #  - codecov
