@@ -15,6 +15,14 @@
 # Incase the project was not installed
 import os
 import sys
+import numpy as np
+from qiskit import QuantumCircuit, transpile
+from qiskit.providers.aer import QasmSimulator
+from qiskit.visualization import plot_histogram
+from qiskit.quantum_info import StabilizerState, Pauli
+import matplotlib
+import matplotlib.pyplot as plt
+
 sys.path.insert(0, os.path.abspath('..'))
 
 import stabilizer_project
