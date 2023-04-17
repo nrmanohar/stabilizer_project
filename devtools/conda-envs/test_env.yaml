@@ -10,7 +10,6 @@ dependencies:
    # Package dependencies
  - numpy
  - matplotlib
- - qiskit
 
    # Testing
  - pytest
