@@ -1,3 +1,4 @@
+"Contains the classes and function to manipulate stabilizer and graph states"
 import numpy as np
 from qiskit import QuantumCircuit, transpile
 from qiskit.providers.aer import QasmSimulator
@@ -8,13 +9,18 @@ import matplotlib.pyplot as plt
 
 class Stab:
     '''
-    This is a simple class to calculate the hamiltonian for a spin configuration
+    This is a class that encodes the stabilizer state in terms of its stabilizers
+    
     :param size: Number of qubits
-    :type size: int, optional
-    :param stabs: The stabilizers, either in a string or a list
-    :type mu: string or list, optional
+    :type size: int
+
+    :param stabs: The stabilizers, either in a string or a list, in the format 'XX,-YY' or '[XX,-YY]' (case sensitive). Optional, defaults to 'XX,ZZ'
+    :type stabs: list or string, optional
     '''
     def __init__(self, n = 2, stabs = 'XX,ZZ'):
+        """Constructor method
+
+        """
         self.size = n
         try:
             self.stab = stabs.split(',')
@@ -25,8 +31,20 @@ class Stab:
         self.tab = list[0]
         self.signvector = list[1]
     def num_qubits(self):
+        """
+        Returns the size of the stabilizer (the number of qubits)
+
+        :return: The size of the stabilizer
+        :rtype: int
+        """
         return self.size
     def tableau(self):
+        """
+        Converts the stabilizers to a tableau and signvector
+
+        :return: A list contained the tableau and the signvector
+        :rtype: list
+        """
         tab = np.zeros(2*self.size*self.size)
         tab = tab.reshape(self.size,2*self.size)
         sign = np.zeros(self.size)
@@ -48,6 +66,12 @@ class Stab:
                     print('Invalid Stabilizer')
         return [tab,sign]
     def new_stab(self,newstabs):
+        """
+        Resets the stabilizer and new tableau associated with it
+
+        :param newstabs: The new stabilizers
+        :type newstabs: string
+        """
         try:
             self.stab = newstabs.split(',')
         except:
@@ -56,6 +80,18 @@ class Stab:
         self.tab = list[0]
         self.signvector = list[1]
     def clifford(self,type,q1,q2=None):
+        """
+        Applies a clifford gate to the stabilizer
+
+        :param type: The clifford gate to be operated, 'H', 'X', 'Y', 'Z', 'CNOT', 'CZ', or 'S'
+        :type type: string
+
+        :param q1: The qubit to operate on, or the control qubit for entangling gates
+        :type q1: int
+
+        :param q2: The qubit to target, defaults to None
+        :type q2: int
+        """
         if type.lower() == 'h':
             for i in range(self.size):
                 alpha = self.tab[i,q1]
@@ -113,11 +149,27 @@ class Stab:
         else:
             print("Something went wrong, make sure you inputted a valid type. Valid types are 'H' for Hadamard, 'S' for the phase gate, 'CNOT' for the Control Not, 'CZ' for the Control Z.")
     def report(self):
+        """
+        Prints the tableau and the signvector
+
+        
+        """
         print(self.tab)
         print(self.signvector)
     def gaussian(self):
+        """
+        Reorder the stabilizers to make the circuit builder easier
+
+        
+        """
         pass
     def circuit_builder(self):
+        """
+        Uses reverse operations to build the stabilizer state
+
+        :return: A list of operations to take a standard state to the given stabilizer state
+        :rtype: list        
+        """
         size = self.size
         rev_operations = []
         reference = np.copy(self.tab)
@@ -145,16 +197,24 @@ class Stab:
         print(rev_operations)
         print(self.tab)
         self.tab = np.copy(reference)
-
-
-
-    
-
-
-
+        operations = rev_operations.reverse()
+        return operations
 
 
 def grapher(edgelist):
+    """
+    Function that can graph a graph state provided an edgelist
+
+    Parameters
+    ----------
+    edgelist : list
+        A list that denotes all the connections in a graph state. The edgelist is a nested list, with each inner list containing two elements, the numbers of the qubits that are connected.
+
+    Returns
+    -------
+    circuit : QuantumCircuit
+        A Qiskit quantum circuit that encodes the circuit that generates that graph
+    """
     num=0
     for i in range(len(edgelist)):
         for j in range(len(edgelist[i])):
@@ -169,30 +229,6 @@ def grapher(edgelist):
     print(stab)
     return circuit
 
-
-def canvas(with_attribution=True):
-    """
-    Placeholder function to show example docstring (NumPy format).
-
-    Replace this function and doc string for your own project.
-
-    Parameters
-    ----------
-    with_attribution : bool, Optional, default: True
-        Set whether or not to display who the quote is from.
-
-    Returns
-    -------
-    quote : str
-        Compiled string including quote and optional attribution.
-    """
-
-    quote = "The code is but a canvas to our imagination."
-    if with_attribution:
-        quote += "\n\t- Adapted from Henry David Thoreau"
-    return quote
-
-
 if __name__ == "__main__":
     # Do something if this file is invoked on its own
-    print(canvas())
+    grapher([[0,1],[1,2],[2,3],[3,4],[4,5],[5,0]])
