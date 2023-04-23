@@ -1,8 +1,6 @@
 "Contains the classes and function to manipulate stabilizer and graph states"
 import numpy as np
 from qiskit import QuantumCircuit, transpile
-from qiskit.providers.aer import QasmSimulator
-from qiskit.visualization import plot_histogram
 from qiskit.quantum_info import StabilizerState, Pauli
 import matplotlib
 import matplotlib.pyplot as plt
@@ -11,8 +9,8 @@ class Stab:
     '''
     This is a class that encodes the stabilizer state in terms of its stabilizers
     
-    :param size: Number of qubits
-    :type size: int
+    :param n: Number of qubits
+    :type n: int, optional
 
     :param stabs: The stabilizers, either in a string or a list, in the format 'XX,-YY' or '[XX,-YY]' (case sensitive). Optional, defaults to 'XX,ZZ'
     :type stabs: list or string, optional
@@ -23,13 +21,58 @@ class Stab:
         """
         self.size = n
         try:
-            self.stab = stabs.split(',')
+            self.__stab = stabs.split(',')
         except:
-            self.stab = stabs
-        self.signvector = np.zeros(n)
+            self.__stab = stabs
         list = self.tableau()
         self.tab = list[0]
         self.signvector = list[1]
+        while self.empty_column():
+            print("Invalid input, free qubit (all stabilizers for some qubit is the identity)")
+            n = int(input("Number of Qubits "))
+            stabs = input("Stabilizers ")
+            self.size = n
+            try:
+                self.__stab = stabs.split(',')
+            except:
+                self.__stab = stabs
+            list = self.tableau()
+            self.tab = list[0]
+            self.signvector = list[1]
+        while not self.commuter():
+            print("Invalid Inputs, Stabilizers do not commute")
+            n = int(input("Number of Qubits "))
+            stabs = input("Stabilizers ")
+            self.size = n
+            try:
+                self.__stab = stabs.split(',')
+            except:
+                self.__stab = stabs
+            list = self.tableau()
+            self.tab = list[0]
+            self.signvector = list[1]
+
+
+    def commuter(self):
+        """
+        Tests whether the stabilizers commute with each other
+
+        :return: Whether or not they commute
+        :rtype: boolean
+        """
+        for i in range(self.size):
+            toggler=0
+            for j in range(i+1,self.size):
+                for k in range(self.size):
+                    if self.tab[i,k]==self.tab[j,k] and self.tab[i,k+self.size]==self.tab[j,k+self.size]:
+                        toggler = toggler
+                    elif (self.tab[i,k+self.size]==0 and self.tab[i,k]==0) or (self.tab[j,k+self.size]==0 and self.tab[j,k]==0):
+                        toggler = toggler
+                    else:
+                        toggler = toggler+1
+                if toggler%2 != 0:
+                    return False
+        return True
     def num_qubits(self):
         """
         Returns the size of the stabilizer (the number of qubits)
@@ -48,37 +91,90 @@ class Stab:
         tab = np.zeros(2*self.size*self.size)
         tab = tab.reshape(self.size,2*self.size)
         sign = np.zeros(self.size)
-        for i in range(len(self.stab)):
-            if self.stab[i][0]=='-':
+        for i in range(len(self.__stab)):
+            if self.__stab[i][0]=='-':
                 sign[i]=1
-                self.stab[i]=self.stab[i][1:]
-            for j in range(len(self.stab[i])):
-                if self.stab[i][j]=='I':
+                self.__stab[i]=self.__stab[i][1:]
+            for j in range(len(self.__stab[i])):
+                if self.__stab[i][j]=='I':
                     pass
-                elif self.stab[i][j]=='X':
+                elif self.__stab[i][j]=='X':
                     tab[i,j]=1
-                elif self.stab[i][j]=='Z':
+                elif self.__stab[i][j]=='Z':
                     tab[i,j+self.size]=1
-                elif self.stab[i][j]=='Y':
+                elif self.__stab[i][j]=='Y':
                     tab[i,j]=1
                     tab[i,j+self.size]=1
                 else:
                     print('Invalid Stabilizer')
         return [tab,sign]
-    def new_stab(self,newstabs):
+    def stabilizers(self):
+        """
+        Returns a list of the stabilizers of the state, as per the tableau
+
+        :return: A list of operations to take a standard state to the given stabilizer state
+        :rtype: list  
+        
+        """
+        self.__stab = []
+        for i in range(self.size):
+            str = ""
+            if self.signvector[i]==1:
+                str = str+"-"
+            for j in range(self.size):
+                if self.tab[i,j]==0 and self.tab[i,j+self.size]==0:
+                    str = str+"I"
+                elif self.tab[i,j]==1 and self.tab[i,j+self.size]==0:
+                    str = str+"X"
+                if self.tab[i,j]==0 and self.tab[i,j+self.size]==1:
+                    str = str+"Z"
+                if self.tab[i,j]==1 and self.tab[i,j+self.size]==1:
+                    str = str+"Y"
+            self.__stab.append(str)
+        return self.__stab
+    def new_stab(self,size,newstabs):
         """
         Resets the stabilizer and new tableau associated with it
+
+        :param size: The size of the new state
+        :type size: int
 
         :param newstabs: The new stabilizers
         :type newstabs: string
         """
+        self.size = size
         try:
-            self.stab = newstabs.split(',')
+            self.__stab = newstabs.split(',')
         except:
-            self.stab = newstabs
+            self.__stab = newstabs
         list = self.tableau()
         self.tab = list[0]
         self.signvector = list[1]
+        while self.empty_column():
+            print("Invalid input, free qubit (all stabilizers for some qubit is the identity)")
+            n = int(input("Number of Qubits "))
+            stabs = input("Stabilizers ")
+            self.size = n
+            try:
+                self.__stab = stabs.split(',')
+            except:
+                self.__stab = stabs
+            list = self.tableau()
+            self.tab = list[0]
+            self.signvector = list[1]
+        while not self.commuter():
+            print("Invalid Inputs, Stabilizers do not commute")
+            n = int(input("Number of Qubits "))
+            stabs = input("Stabilizers ")
+            self.size = n
+            try:
+                self.__stab = stabs.split(',')
+            except:
+                self.__stab = stabs
+            list = self.tableau()
+            self.tab = list[0]
+            self.signvector = list[1]
+
     def clifford(self,type,q1,q2=None):
         """
         Applies a clifford gate to the stabilizer
@@ -152,53 +248,153 @@ class Stab:
         """
         Prints the tableau and the signvector
 
-        
         """
         print(self.tab)
         print(self.signvector)
+
     def gaussian(self):
         """
-        Reorder the stabilizers to make the circuit builder easier
-
+        Generates an array that contains information about where stabilizers are known
         
         """
-        pass
+        self.gauss = np.zeros(self.size*self.size)
+        self.gauss = self.gauss.reshape(self.size,self.size)
+        for i in range(self.size):
+            for j in range(self.size):
+                if self.tab[i,j]==1 or self.tab[i,j+self.size]==1:
+                    self.gauss[i,j]=1
+    
+    def empty_column(self):
+        """
+        Tests whether there are any empty stabilizers (free qubits)
+
+        :return: Whether there is an empty column or not
+        :rtype: boolean
+        """
+        self.gaussian()
+        zed = self.gauss.sum(axis=0)
+        empty = False
+        for i in range(self.size):
+            if zed[i]==0:
+                empty = True
+        return empty
+
+
+    def row_add(self,row1,row2):
+        """
+        Multiplies two stabilizers in the tableau together, specifying a new stabilizer, and puts them into the second row
+
+        """
+        for i in range(2*self.size):
+            self.tab[row2,i]=(self.tab[row2,i]+self.tab[row1,i])%2
+        toggler=0
+        for i in range(self.size):
+            if self.tab[row1,i]==self.tab[row2,i] and self.tab[row1,i+self.size]==self.tab[row2,i+self.size]:
+                toggler = toggler
+            elif (self.tab[row1,i+self.size]==0 and self.tab[row1,i]==0) or (self.tab[row2,i+self.size]==0 and self.tab[row2,i]==0):
+                toggler = toggler
+            else:
+                toggler = toggler+1
+        print(toggler)
+        flipper = (toggler%4)/2
+        self.signvector[row2]=(self.signvector[row2]+flipper)%2
     def circuit_builder(self):
         """
         Uses reverse operations to build the stabilizer state
 
-        :return: A list of operations to take a standard state to the given stabilizer state
-        :rtype: list        
+        :return: A Qiskit circuit that makes the stabilizer
+        :rtype: Circuit        
         """
-        size = self.size
-        rev_operations = []
         reference = np.copy(self.tab)
+        sign = np.copy(self.signvector)
+        rev_operations = []
+
+        broken = False
+
         for i in range(self.size):
-            if self.tab[i,i]==1:
-                continue
-            elif self.tab[i,self.size+i]==1:
-                self.clifford('h',i)
-                rev_operations.append('h,'+str(i))
+            if self.tab[i,i]==0:
+                if self.tab[i,i+self.size]==1:
+                    rev_operations.append(['H',i])
+                    self.clifford('H',i)
+            if self.tab[i,i]==0:
+                for j in range(i+1,self.size):
+                    if self.tab[j,i]==1:
+                        self.tab[[i,j]]=self.tab[[j,i]]
+                        self.signvector[[i,j]]=self.signvector[[j,i]]
+                        break
+            if self.tab[i,i]==0:
+                for j in range(i+1,self.size):
+                    if self.tab[j,i+self.size]==1:
+                        self.tab[[i,j]]=self.tab[[j,i]]
+                        self.signvector[[i,j]]=self.signvector[[j,i]]
+                        rev_operations.append(['H',i])
+                        self.clifford('H',i)
+                        break
+            if self.tab[i,i]==0:
+                for j in range(i):
+                    if self.tab[j,i+self.size]==1:
+                        self.row_add(j,i)
+                        rev_operations.append(['H',i])
+                        self.clifford('H',i)
+                        break
+            if self.tab[i,i]==0:
+                broken = True
+                break
+            elif self.tab[i,i]==1:
+                for j in range(self.size):
+                    if self.tab[i,j]==1 and j!=i:
+                        rev_operations.append(["CNOT",i,j])
+                        self.clifford("CNOT",i,j)
+                
+
+        if broken:
+            print("Something went wrong in the building procedure. Check your stabilizers and maybe reformat them and try again")
+            return None
+
+        for i in range(self.size):
+            if self.tab[i,i+self.size]==1:
+                rev_operations.append(["S",i])
+                self.clifford("S",i)
+
         for i in range(self.size):
             for j in range(self.size):
-                if i != j:
-                    if self.tab[i,j]==1:
-                        self.clifford('CNOT',i,j)
-                        rev_operations.append('CNOT,'+str(i)+','+str(j))
+                if self.tab[i,j+self.size]==1:
+                    rev_operations.append(["CZ",i,j])
+                    self.clifford("CZ",i,j)
+
         for i in range(self.size):
-            if self.tab[i,self.size+i]==1:
-                if self.signvector[i]==0:
-                    rev_operations.append('s,'+str(i))
-                    self.clifford('s',i)
-                    self.clifford('z',i)
-                elif self.signvector[i]==1:
-                    rev_operations.append('sdag,'+str(i))
-                    self.clifford('s',i)
-        print(rev_operations)
-        print(self.tab)
+            self.clifford('H',i)
+            rev_operations.append(['H',i])
+        
+        for i in range(self.size):
+            if self.signvector[i]==1:
+                rev_operations.append(['X',i])
+                self.clifford('X',i)
+        
         self.tab = np.copy(reference)
-        operations = rev_operations.reverse()
-        return operations
+        self.signvector = np.copy(sign)
+        
+        rev_operations.reverse()
+
+        circuit = QuantumCircuit(self.size)
+
+        
+        for i in range(len(rev_operations)):
+            if rev_operations[i][0]=='H':
+                circuit.h(rev_operations[i][1])
+            elif rev_operations[i][0]=='S':
+                circuit.s(rev_operations[i][1])
+            elif rev_operations[i][0]=='X':
+                circuit.x(rev_operations[i][1])
+            elif rev_operations[i][0]=='Y':
+                circuit.y(rev_operations[i][1])
+            elif rev_operations[i][0]=='Z':
+                circuit.z(rev_operations[i][1])
+            elif rev_operations[i][0]=='CNOT':
+                circuit.cnot(rev_operations[i][1],rev_operations[i][2])
+            elif rev_operations[i][0]=='CZ':
+                circuit.cz(rev_operations[i][1],rev_operations[i][2])
+        return circuit
 
 
 def grapher(edgelist):
