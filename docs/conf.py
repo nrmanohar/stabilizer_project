@@ -23,8 +23,8 @@ import stabilizer_project
 # -- Project information -----------------------------------------------------
 
 project = 'stabilizer_project'
-copyright = ("2023, Nishad Manohar. Project structure based on the "
-             "Computational Molecular Science Python Cookiecutter version 1.1")
+copyright = ("2022, Nishad Manohar. Project structure based on the "
+             "Computational Molecular Science Python Cookiecutter version 1.6")
 author = 'Nishad Manohar'
 
 # The short X.Y version
@@ -42,20 +42,18 @@ release = ''
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
+
 extensions = [
+    
     'sphinx.ext.autosummary',
     'sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.extlinks',
 ]
 
-autosummary_generate = True
-napoleon_google_docstring = False
-napoleon_use_param = False
-napoleon_use_ivar = True
+                  
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -166,7 +164,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'stabilizer_project', 'stabilizer_project Documentation',
-     author, 'stabilizer_project', 'A package for the quantum software II course at Virginia Tech to find properties of and manipulate stabilizer states',
+     author, 'stabilizer_project', 'A python package to work with classical spin lattices',
      'Miscellaneous'),
 ]
 
