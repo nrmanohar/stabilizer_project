@@ -1,0 +1,4 @@
+numpy
+matplotlib
+qiskit
+sphinx_rtd_theme

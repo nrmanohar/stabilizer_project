@@ -5,7 +5,7 @@ from qiskit.quantum_info import StabilizerState, Pauli
 import matplotlib
 import matplotlib.pyplot as plt
 
-class Stab:
+class Stabilizer_State:
     '''
     This is a class that encodes the stabilizer state in terms of its stabilizers
     
@@ -226,22 +226,9 @@ class Stab:
             if q2 == None:
                 print('Recall method and specify second qubit')
             else:
-                self.tab[:, [q2+self.size, q2]] = self.tab[:, [q2, q2+self.size]]
-                for i in range(self.size):
-                    if self.tab[i,q2]==1:
-                        if self.tab[i,self.size+q2]==1:
-                            self.signvector[i] = (self.signvector[i]+1)%2
-                for i in range(self.size):
-                    self.tab[i,q2] = (self.tab[i,q1]+self.tab[i,q2])%2
-                    self.tab[i,self.size+q1] = (self.tab[i,q1+self.size]+self.tab[i,q2+self.size])%2
-                    if self.tab[i,q1]==1 and self.tab[i,q2+self.size]==1:
-                        if self.tab[i,q2]==self.tab[i,self.size+q1]:
-                            self.signvector[i]=(self.signvector[i]+1)%2
-                self.tab[:, [q2+self.size, q2]] = self.tab[:, [q2, q2+self.size]]
-                for i in range(self.size):
-                    if self.tab[i,q2]==1:
-                        if self.tab[i,self.size+q2]==1:
-                            self.signvector[i] = (self.signvector[i]+1)%2
+                self.clifford('h',q2)
+                self.clifford('cnot',q1,q2)
+                self.clifford('h', q2)
         else:
             print("Something went wrong, make sure you inputted a valid type. Valid types are 'H' for Hadamard, 'S' for the phase gate, 'CNOT' for the Control Not, 'CZ' for the Control Z.")
     def report(self):
@@ -384,6 +371,7 @@ class Stab:
                 circuit.h(rev_operations[i][1])
             elif rev_operations[i][0]=='S':
                 circuit.s(rev_operations[i][1])
+                circuit.z(rev_operations[i][1])
             elif rev_operations[i][0]=='X':
                 circuit.x(rev_operations[i][1])
             elif rev_operations[i][0]=='Y':
@@ -396,6 +384,13 @@ class Stab:
                 circuit.cz(rev_operations[i][1],rev_operations[i][2])
         return circuit
 
+    def draw_circuit(self):
+        """
+        Draws a circuit that can generate the given stabilizer state
+        """
+        circ = self.circuit_builder()
+        circ.draw('mpl')
+        plt.show()
 
 def grapher(edgelist):
     """
