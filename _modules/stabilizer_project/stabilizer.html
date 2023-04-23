@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>stabilizer_project.stabilizer &mdash; stabilizer_project  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            stabilizer_project
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#api-documentation">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../about.html">About this package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">stabilizer_project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">stabilizer_project.stabilizer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for stabilizer_project.stabilizer</h1><div class="highlight"><pre>
+<span></span><span class="s2">&quot;Contains the classes and function to manipulate stabilizer and graph states&quot;</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">qiskit</span> <span class="kn">import</span> <span class="n">QuantumCircuit</span><span class="p">,</span> <span class="n">transpile</span>
+<span class="kn">from</span> <span class="nn">qiskit.quantum_info</span> <span class="kn">import</span> <span class="n">StabilizerState</span><span class="p">,</span> <span class="n">Pauli</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<div class="viewcode-block" id="Stabilizer"><a class="viewcode-back" href="../../api.html#stabilizer_project.Stabilizer">[docs]</a><span class="k">class</span> <span class="nc">Stabilizer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    This is a class that encodes the stabilizer state in terms of its stabilizers</span>
+<span class="sd">    </span>
+<span class="sd">    :param n: Number of qubits</span>
+<span class="sd">    :type n: int, optional</span>
+
+<span class="sd">    :param stabs: The stabilizers, either in a string or a list, in the format &#39;XX,-YY&#39; or &#39;[XX,-YY]&#39; (case sensitive). Optional, defaults to &#39;XX,ZZ&#39;</span>
+<span class="sd">    :type stabs: list or string, optional</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">stabs</span> <span class="o">=</span> <span class="s1">&#39;XX,ZZ&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor method</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span> <span class="o">=</span> <span class="n">stabs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span> <span class="o">=</span> <span class="n">stabs</span>
+        <span class="nb">list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tableau</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tab</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">empty_column</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid input, free qubit (all stabilizers for some qubit is the identity)&quot;</span><span class="p">)</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Number of Qubits &quot;</span><span class="p">))</span>
+            <span class="n">stabs</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Stabilizers &quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">n</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span> <span class="o">=</span> <span class="n">stabs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span> <span class="o">=</span> <span class="n">stabs</span>
+            <span class="nb">list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tableau</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tab</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">commuter</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid Inputs, Stabilizers do not commute&quot;</span><span class="p">)</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Number of Qubits &quot;</span><span class="p">))</span>
+            <span class="n">stabs</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Stabilizers &quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">n</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span> <span class="o">=</span> <span class="n">stabs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span> <span class="o">=</span> <span class="n">stabs</span>
+            <span class="nb">list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tableau</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tab</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="Stabilizer.commuter"><a class="viewcode-back" href="../../api.html#stabilizer_project.Stabilizer.commuter">[docs]</a>    <span class="k">def</span> <span class="nf">commuter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tests whether the stabilizers commute with each other</span>
+
+<span class="sd">        :return: Whether or not they commute</span>
+<span class="sd">        :rtype: boolean</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">toggler</span><span class="o">=</span><span class="mi">0</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">k</span><span class="p">]</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">]</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">k</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]:</span>
+                        <span class="n">toggler</span> <span class="o">=</span> <span class="n">toggler</span>
+                    <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">k</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">k</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
+                        <span class="n">toggler</span> <span class="o">=</span> <span class="n">toggler</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">toggler</span> <span class="o">=</span> <span class="n">toggler</span><span class="o">+</span><span class="mi">1</span>
+                <span class="k">if</span> <span class="n">toggler</span><span class="o">%</span><span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+<div class="viewcode-block" id="Stabilizer.num_qubits"><a class="viewcode-back" href="../../api.html#stabilizer_project.Stabilizer.num_qubits">[docs]</a>    <span class="k">def</span> <span class="nf">num_qubits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the size of the stabilizer (the number of qubits)</span>
+
+<span class="sd">        :return: The size of the stabilizer</span>
+<span class="sd">        :rtype: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span></div>
+<div class="viewcode-block" id="Stabilizer.tableau"><a class="viewcode-back" href="../../api.html#stabilizer_project.Stabilizer.tableau">[docs]</a>    <span class="k">def</span> <span class="nf">tableau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Converts the stabilizers to a tableau and signvector</span>
+
+<span class="sd">        :return: A list contained the tableau and the signvector</span>
+<span class="sd">        :rtype: list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tab</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">tab</span> <span class="o">=</span> <span class="n">tab</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">sign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__stab</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;-&#39;</span><span class="p">:</span>
+                <span class="n">sign</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__stab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__stab</span><span class="p">[</span><span class="n">i</span><span class="p">])):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;I&#39;</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;X&#39;</span><span class="p">:</span>
+                    <span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span>
+                    <span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Y&#39;</span><span class="p">:</span>
+                    <span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                    <span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Invalid Stabilizer&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">tab</span><span class="p">,</span><span class="n">sign</span><span class="p">]</span></div>
+<div class="viewcode-block" id="Stabilizer.stabilizers"><a class="viewcode-back" href="../../api.html#stabilizer_project.Stabilizer.stabilizers">[docs]</a>    <span class="k">def</span> <span class="nf">stabilizers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a list of the stabilizers of the state, as per the tableau</span>
+
+<span class="sd">        :return: A list of operations to take a standard state to the given stabilizer state</span>
+<span class="sd">        :rtype: list  </span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="o">+</span><span class="s2">&quot;-&quot;</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                    <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="o">+</span><span class="s2">&quot;I&quot;</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                    <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="o">+</span><span class="s2">&quot;X&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="o">+</span><span class="s2">&quot;Z&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="o">+</span><span class="s2">&quot;Y&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span></div>
+<div class="viewcode-block" id="Stabilizer.new_stab"><a class="viewcode-back" href="../../api.html#stabilizer_project.Stabilizer.new_stab">[docs]</a>    <span class="k">def</span> <span class="nf">new_stab</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">size</span><span class="p">,</span><span class="n">newstabs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resets the stabilizer and new tableau associated with it</span>
+
+<span class="sd">        :param size: The size of the new state</span>
+<span class="sd">        :type size: int</span>
+
+<span class="sd">        :param newstabs: The new stabilizers</span>
+<span class="sd">        :type newstabs: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span> <span class="o">=</span> <span class="n">newstabs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span> <span class="o">=</span> <span class="n">newstabs</span>
+        <span class="nb">list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tableau</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tab</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">empty_column</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid input, free qubit (all stabilizers for some qubit is the identity)&quot;</span><span class="p">)</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Number of Qubits &quot;</span><span class="p">))</span>
+            <span class="n">stabs</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Stabilizers &quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">n</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span> <span class="o">=</span> <span class="n">stabs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span> <span class="o">=</span> <span class="n">stabs</span>
+            <span class="nb">list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tableau</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tab</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">commuter</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid Inputs, Stabilizers do not commute&quot;</span><span class="p">)</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Number of Qubits &quot;</span><span class="p">))</span>
+            <span class="n">stabs</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Stabilizers &quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">n</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span> <span class="o">=</span> <span class="n">stabs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__stab</span> <span class="o">=</span> <span class="n">stabs</span>
+            <span class="nb">list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tableau</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tab</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Stabilizer.clifford"><a class="viewcode-back" href="../../api.html#stabilizer_project.Stabilizer.clifford">[docs]</a>    <span class="k">def</span> <span class="nf">clifford</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="nb">type</span><span class="p">,</span><span class="n">q1</span><span class="p">,</span><span class="n">q2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies a clifford gate to the stabilizer</span>
+
+<span class="sd">        :param type: The clifford gate to be operated, &#39;H&#39;, &#39;X&#39;, &#39;Y&#39;, &#39;Z&#39;, &#39;CNOT&#39;, &#39;CZ&#39;, or &#39;S&#39;</span>
+<span class="sd">        :type type: string</span>
+
+<span class="sd">        :param q1: The qubit to operate on, or the control qubit for entangling gates</span>
+<span class="sd">        :type q1: int</span>
+
+<span class="sd">        :param q2: The qubit to target, defaults to None</span>
+<span class="sd">        :type q2: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;h&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q1</span><span class="p">]</span>
+                <span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q1</span><span class="p">]</span><span class="o">=</span><span class="n">beta</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">=</span><span class="n">alpha</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="p">(</span><span class="n">alpha</span><span class="o">*</span><span class="n">beta</span><span class="p">))</span><span class="o">%</span><span class="mi">2</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;cnot&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">q2</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Recall method and specify second qubit&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q2</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q1</span><span class="p">]</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q2</span><span class="p">])</span><span class="o">%</span><span class="mi">2</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">+</span><span class="n">q1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q2</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">])</span><span class="o">%</span><span class="mi">2</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q1</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q2</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q2</span><span class="p">]</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">+</span><span class="n">q1</span><span class="p">]:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q1</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;x&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q1</span><span class="p">]</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">])</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;s&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q1</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">])</span><span class="o">%</span><span class="mi">2</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">q1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;cz&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">q2</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Recall method and specify second qubit&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">clifford</span><span class="p">(</span><span class="s1">&#39;h&#39;</span><span class="p">,</span><span class="n">q2</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">clifford</span><span class="p">(</span><span class="s1">&#39;cnot&#39;</span><span class="p">,</span><span class="n">q1</span><span class="p">,</span><span class="n">q2</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">clifford</span><span class="p">(</span><span class="s1">&#39;h&#39;</span><span class="p">,</span> <span class="n">q2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Something went wrong, make sure you inputted a valid type. Valid types are &#39;H&#39; for Hadamard, &#39;S&#39; for the phase gate, &#39;CNOT&#39; for the Control Not, &#39;CZ&#39; for the Control Z.&quot;</span><span class="p">)</span></div>
+<div class="viewcode-block" id="Stabilizer.report"><a class="viewcode-back" href="../../api.html#stabilizer_project.Stabilizer.report">[docs]</a>    <span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prints the tableau and the signvector</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Stabilizer.gaussian"><a class="viewcode-back" href="../../api.html#stabilizer_project.Stabilizer.gaussian">[docs]</a>    <span class="k">def</span> <span class="nf">gaussian</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates an array that contains information about where stabilizers are known</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gauss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gauss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gauss</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">gauss</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span></div>
+    
+<div class="viewcode-block" id="Stabilizer.empty_column"><a class="viewcode-back" href="../../api.html#stabilizer_project.Stabilizer.empty_column">[docs]</a>    <span class="k">def</span> <span class="nf">empty_column</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tests whether there are any empty stabilizers (free qubits)</span>
+
+<span class="sd">        :return: Whether there is an empty column or not</span>
+<span class="sd">        :rtype: boolean</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gaussian</span><span class="p">()</span>
+        <span class="n">zed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gauss</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">empty</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">zed</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">empty</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">empty</span></div>
+
+
+<div class="viewcode-block" id="Stabilizer.row_add"><a class="viewcode-back" href="../../api.html#stabilizer_project.Stabilizer.row_add">[docs]</a>    <span class="k">def</span> <span class="nf">row_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">row1</span><span class="p">,</span><span class="n">row2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Multiplies two stabilizers in the tableau together, specifying a new stabilizer, and puts them into the second row</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">row2</span><span class="p">,</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">row2</span><span class="p">,</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">row1</span><span class="p">,</span><span class="n">i</span><span class="p">])</span><span class="o">%</span><span class="mi">2</span>
+        <span class="n">toggler</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">row1</span><span class="p">,</span><span class="n">i</span><span class="p">]</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">row2</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">row1</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">row2</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]:</span>
+                <span class="n">toggler</span> <span class="o">=</span> <span class="n">toggler</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">row1</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">row1</span><span class="p">,</span><span class="n">i</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">row2</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">row2</span><span class="p">,</span><span class="n">i</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
+                <span class="n">toggler</span> <span class="o">=</span> <span class="n">toggler</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">toggler</span> <span class="o">=</span> <span class="n">toggler</span><span class="o">+</span><span class="mi">1</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">toggler</span><span class="p">)</span>
+        <span class="n">flipper</span> <span class="o">=</span> <span class="p">(</span><span class="n">toggler</span><span class="o">%</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">row2</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">row2</span><span class="p">]</span><span class="o">+</span><span class="n">flipper</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span></div>
+<div class="viewcode-block" id="Stabilizer.circuit_builder"><a class="viewcode-back" href="../../api.html#stabilizer_project.Stabilizer.circuit_builder">[docs]</a>    <span class="k">def</span> <span class="nf">circuit_builder</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Uses reverse operations to build the stabilizer state</span>
+
+<span class="sd">        :return: A Qiskit circuit that makes the stabilizer</span>
+<span class="sd">        :rtype: Circuit        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">)</span>
+        <span class="n">sign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">)</span>
+        <span class="n">rev_operations</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">broken</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">rev_operations</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s1">&#39;H&#39;</span><span class="p">,</span><span class="n">i</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">clifford</span><span class="p">(</span><span class="s1">&#39;H&#39;</span><span class="p">,</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">i</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]]</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[[</span><span class="n">j</span><span class="p">,</span><span class="n">i</span><span class="p">]]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]]</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[[</span><span class="n">j</span><span class="p">,</span><span class="n">i</span><span class="p">]]</span>
+                        <span class="k">break</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]]</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[[</span><span class="n">j</span><span class="p">,</span><span class="n">i</span><span class="p">]]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]]</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[[</span><span class="n">j</span><span class="p">,</span><span class="n">i</span><span class="p">]]</span>
+                        <span class="n">rev_operations</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s1">&#39;H&#39;</span><span class="p">,</span><span class="n">i</span><span class="p">])</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">clifford</span><span class="p">(</span><span class="s1">&#39;H&#39;</span><span class="p">,</span><span class="n">i</span><span class="p">)</span>
+                        <span class="k">break</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">row_add</span><span class="p">(</span><span class="n">j</span><span class="p">,</span><span class="n">i</span><span class="p">)</span>
+                        <span class="n">rev_operations</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s1">&#39;H&#39;</span><span class="p">,</span><span class="n">i</span><span class="p">])</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">clifford</span><span class="p">(</span><span class="s1">&#39;H&#39;</span><span class="p">,</span><span class="n">i</span><span class="p">)</span>
+                        <span class="k">break</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">broken</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">j</span><span class="o">!=</span><span class="n">i</span><span class="p">:</span>
+                        <span class="n">rev_operations</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s2">&quot;CNOT&quot;</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">])</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">clifford</span><span class="p">(</span><span class="s2">&quot;CNOT&quot;</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span>
+                
+
+        <span class="k">if</span> <span class="n">broken</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Something went wrong in the building procedure. Check your stabilizers and maybe reformat them and try again&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">rev_operations</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s2">&quot;S&quot;</span><span class="p">,</span><span class="n">i</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">clifford</span><span class="p">(</span><span class="s2">&quot;S&quot;</span><span class="p">,</span><span class="n">i</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">rev_operations</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s2">&quot;CZ&quot;</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">clifford</span><span class="p">(</span><span class="s2">&quot;CZ&quot;</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clifford</span><span class="p">(</span><span class="s1">&#39;H&#39;</span><span class="p">,</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">rev_operations</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s1">&#39;H&#39;</span><span class="p">,</span><span class="n">i</span><span class="p">])</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">rev_operations</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s1">&#39;X&#39;</span><span class="p">,</span><span class="n">i</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">clifford</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span><span class="n">i</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">tab</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signvector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">sign</span><span class="p">)</span>
+        
+        <span class="n">rev_operations</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+
+        <span class="n">circuit</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rev_operations</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;H&#39;</span><span class="p">:</span>
+                <span class="n">circuit</span><span class="o">.</span><span class="n">h</span><span class="p">(</span><span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;S&#39;</span><span class="p">:</span>
+                <span class="n">circuit</span><span class="o">.</span><span class="n">s</span><span class="p">(</span><span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">circuit</span><span class="o">.</span><span class="n">z</span><span class="p">(</span><span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;X&#39;</span><span class="p">:</span>
+                <span class="n">circuit</span><span class="o">.</span><span class="n">x</span><span class="p">(</span><span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Y&#39;</span><span class="p">:</span>
+                <span class="n">circuit</span><span class="o">.</span><span class="n">y</span><span class="p">(</span><span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span>
+                <span class="n">circuit</span><span class="o">.</span><span class="n">z</span><span class="p">(</span><span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;CNOT&#39;</span><span class="p">:</span>
+                <span class="n">circuit</span><span class="o">.</span><span class="n">cnot</span><span class="p">(</span><span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;CZ&#39;</span><span class="p">:</span>
+                <span class="n">circuit</span><span class="o">.</span><span class="n">cz</span><span class="p">(</span><span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="n">rev_operations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">circuit</span></div>
+
+<div class="viewcode-block" id="Stabilizer.draw_circuit"><a class="viewcode-back" href="../../api.html#stabilizer_project.Stabilizer.draw_circuit">[docs]</a>    <span class="k">def</span> <span class="nf">draw_circuit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Draws a circuit that can generate the given stabilizer state</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">circ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuit_builder</span><span class="p">()</span>
+        <span class="n">circ</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="s1">&#39;mpl&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
+
+<div class="viewcode-block" id="grapher"><a class="viewcode-back" href="../../api.html#stabilizer_project.grapher">[docs]</a><span class="k">def</span> <span class="nf">grapher</span><span class="p">(</span><span class="n">edgelist</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function that can graph a graph state provided an edgelist</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    edgelist : list</span>
+<span class="sd">        A list that denotes all the connections in a graph state. The edgelist is a nested list, with each inner list containing two elements, the numbers of the qubits that are connected.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    circuit : QuantumCircuit</span>
+<span class="sd">        A Qiskit quantum circuit that encodes the circuit that generates that graph</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num</span><span class="o">=</span><span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">edgelist</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">edgelist</span><span class="p">[</span><span class="n">i</span><span class="p">])):</span>
+            <span class="k">if</span> <span class="n">edgelist</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span><span class="o">&gt;</span><span class="n">num</span><span class="p">:</span>
+                <span class="n">num</span> <span class="o">=</span> <span class="n">edgelist</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+    <span class="n">circuit</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="n">num</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">num</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">circuit</span><span class="o">.</span><span class="n">h</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">edgelist</span><span class="p">)):</span>
+        <span class="n">circuit</span><span class="o">.</span><span class="n">cz</span><span class="p">(</span><span class="n">edgelist</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="n">edgelist</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">stab</span> <span class="o">=</span> <span class="n">StabilizerState</span><span class="p">(</span><span class="n">circuit</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">stab</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">circuit</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Do something if this file is invoked on its own</span>
+    <span class="n">grapher</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">],[</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">],[</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Nishad Manohar. Project structure based on the Computational Molecular Science Python Cookiecutter version 1.1.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
