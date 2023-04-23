@@ -13,3 +13,4 @@ import stabilizer_project
 def test_stabilizer_project_imported():
     """Sample test, will always pass so long as import statement worked."""
     assert "stabilizer_project" in sys.modules
+

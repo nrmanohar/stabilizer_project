@@ -13,6 +13,6 @@ API Documentation
 
 .. autofunction:: grapher
 
-.. autoclass:: Stab 
+.. autoclass:: Stabilizer 
    :members:
 

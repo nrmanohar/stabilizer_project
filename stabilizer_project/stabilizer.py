@@ -5,7 +5,7 @@ from qiskit.quantum_info import StabilizerState, Pauli
 import matplotlib
 import matplotlib.pyplot as plt
 
-class Stabilizer_State:
+class Stabilizer:
     '''
     This is a class that encodes the stabilizer state in terms of its stabilizers
     

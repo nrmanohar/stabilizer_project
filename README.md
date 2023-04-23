@@ -17,6 +17,7 @@ This package requires the following:
   - numpy
   - matplotlib
   - qiskit
+  - pylatexenc (optional)
 
 ### Copyright
 
