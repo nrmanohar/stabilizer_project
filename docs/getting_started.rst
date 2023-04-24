@@ -136,7 +136,7 @@ Let's do an example, building the GHZ state
 .. code-block:: python
 
     state = Stabilizer(3)
-    print(state.stabilizers())
+    state.report()
 
 Which generates the output
 
@@ -152,6 +152,7 @@ We will then apply a Hadamard to the first qubit
 .. code-block:: python
 
     state.clifford('h',0)
+    state.report()
 
 Which generates the output
 
@@ -168,6 +169,7 @@ We then apply two CNOTs
 
     state.clifford('cnot',0,1)
     state.clifford('cnot',1,2)
+    state.report()
 
 which generates the final tableau of
 
@@ -189,14 +191,14 @@ However, if we have a complicated tableau, it might be hard to figure out what i
      [1. 1. 1. 1. 1. 0. 0. 0. 0. 0.]]
     [0. 0. 0. 1. 0.]
 
-It's hard to make any sense of that. Fortunately, we have a method for that!
+It's hard to make any sense of that. Fortunately, we have a method for that! If we had a state with the associated tableau, we can put
 
 .. code-block:: python
 
     stabs=state.stabilizers()
     print(stabs)
 
-generates the output
+and that generates the output
 
 ::
 
@@ -208,7 +210,7 @@ generates the output
 .. code-block:: python
 
     state.new_stab(5,"XZZXI,IXZZX,XIXZZ,ZXIXZ,ZZZZZ")
-    print(state.circuit_builder)
+    print(state.circuit_builder())
 
 Generates the output
 
