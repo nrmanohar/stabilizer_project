@@ -1,7 +1,7 @@
 stabilizer_project
 ==============================
 [//]: # (Badges)
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://nrmanohar.github.io/stabilizer_project/)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://stabilizer-project.readthedocs.io/en/latest/)
 [![GitHub Actions Build Status](https://github.com/nrmanohar/stabilizer_project/workflows/CI/badge.svg)](https://github.com/nrmanohar/stabilizer_project/actions?query=workflow%3ACI)
 
 
