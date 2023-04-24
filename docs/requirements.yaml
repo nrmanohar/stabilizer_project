@@ -8,10 +8,10 @@ dependencies:
     # Package depends
   - numpy
   - matplotlib
-  - qiskit
 
 
 
     # Pip-only installs
   - pip:
     - sphinx-autoapi
+    - qiskit

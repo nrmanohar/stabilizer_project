@@ -30,7 +30,7 @@ author = 'Nishad Manohar'
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = ''
+release = '0.29'
 
 
 # -- General configuration ---------------------------------------------------
@@ -44,14 +44,31 @@ release = ''
 # ones.
 
 extensions = [
-    
-    'sphinx.ext.autosummary',
-    'sphinx.ext.autodoc',
+    'autoapi.extension',
+    #'sphinx.ext.autosummary',
+    #'sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.extlinks',
 ]
+autoapi_dirs = ['../molecool']
+autoapi_ignore = ["*/tests/*",
+                  "*_version.py"]
+                  
+autoapi_options = ['members', 
+		'undoc-members', 
+		#'private-members', 
+		#'special-members', 
+		'show-inheritance', 
+		'show-module-summary', 
+		'imported-members']
+
+# autosummary_generate = True	# or delete this
+napoleon_google_docstring = False
+napoleon_use_param = False
+napoleon_use_ivar = True
 
                   
 
@@ -72,7 +89,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = English
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
