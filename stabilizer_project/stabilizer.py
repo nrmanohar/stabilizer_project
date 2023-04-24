@@ -1,24 +1,36 @@
 "Contains the classes and function to manipulate stabilizer and graph states"
 import numpy as np
-from qiskit import QuantumCircuit, transpile
-from qiskit.quantum_info import StabilizerState, Pauli
-import matplotlib
-import matplotlib.pyplot as plt
+from qiskit import QuantumCircuit, ClassicalRegister
+from qiskit.quantum_info import StabilizerState
 
 class Stabilizer:
     '''
-    This is a class that encodes the stabilizer state in terms of its stabilizers
+    This is a class that encodes the stabilizer state in terms of its stabilizers. If no input is given, it will initialize a bell state. If only the n is given, it will initialize n qubits in the 0 state
     
     :param n: Number of qubits
-    :type n: int, optional
+    :type n: int, Optional
 
-    :param stabs: The stabilizers, either in a string or a list, in the format 'XX,-YY' or '[XX,-YY]' (case sensitive). Optional, defaults to 'XX,ZZ'
+    :param stabs: The stabilizers, either in a string or a list, in the format 'XX,-YY' or '[XX,-YY]' (case sensitive). Optional
     :type stabs: list or string, optional
     '''
-    def __init__(self, n = 2, stabs = 'XX,ZZ'):
+    def __init__(self, n = None, stabs = None):
         """Constructor method
 
         """
+        if n is None and stabs is None:
+            n = 2
+            stabs = 'XX,ZZ'
+        
+        if n is not None and stabs is None:
+            stabs = []
+            for i in range(n):
+                str = ''
+                for j in range(n):
+                    if i==j:
+                        str = str+'Z'
+                    else:
+                        str = str+'I'
+                stabs.append(str)
         self.size = n
         try:
             self.__stab = stabs.split(',')
@@ -52,6 +64,17 @@ class Stabilizer:
             self.tab = list[0]
             self.signvector = list[1]
 
+    def initialize(self, n=2):
+        stabs = []
+        for i in range(n):
+            str = ''
+            for j in range(n):
+                if i==j:
+                    str = str+'Z'
+                else:
+                    str = str+'I'
+            stabs.append(str)
+        
 
     def commuter(self):
         """
@@ -132,16 +155,30 @@ class Stabilizer:
                     str = str+"Y"
             self.__stab.append(str)
         return self.__stab
-    def new_stab(self,size,newstabs):
+    def new_stab(self,size=None,newstabs=None):
         """
         Resets the stabilizer and new tableau associated with it
 
         :param size: The size of the new state
-        :type size: int
+        :type size: int (optional)
 
         :param newstabs: The new stabilizers
-        :type newstabs: string
+        :type newstabs: string or list
         """
+        if size is None and newstabs is None:
+            size = 2
+            newstabs = 'XX,ZZ'
+        
+        if size is not None and newstabs is None:
+            newstabs = []
+            for i in range(size):
+                str = ''
+                for j in range(size):
+                    if i==j:
+                        str = str+'Z'
+                    else:
+                        str = str+'I'
+                newstabs.append(str)
         self.size = size
         try:
             self.__stab = newstabs.split(',')
@@ -290,7 +327,7 @@ class Stabilizer:
         Uses reverse operations to build the stabilizer state
 
         :return: A Qiskit circuit that makes the stabilizer
-        :rtype: Circuit        
+        :rtype: QuantumCircuit        
         """
         reference = np.copy(self.tab)
         sign = np.copy(self.signvector)
@@ -335,6 +372,8 @@ class Stabilizer:
                 
 
         if broken:
+            self.tab = np.copy(reference)
+            self.signvector = np.copy(sign)
             print("Something went wrong in the building procedure. Check your stabilizers and maybe reformat them and try again")
             return None
 
@@ -384,13 +423,108 @@ class Stabilizer:
                 circuit.cz(rev_operations[i][1],rev_operations[i][2])
         return circuit
 
-    def draw_circuit(self):
+    def draw_circuit(self, style = 'mpl', save = None):
         """
-        Draws a circuit that can generate the given stabilizer state
+        Draws a circuit that can generate the given stabilizer state (requires matplotlib and pylatexenc package)
+
+        :param style: The type of output, 'mpl' for matplotlib, 'text' for ASCII drawing, 'latex_source' for raw latex output
+        :type style: String, optional. Defaults to 'mpl'
+
+        :param save: If you want to save the file to something (optional)
+        :type save: String
+
+        """
+        if style == 'mpl':
+            try:
+                import matplotlib
+                import matplotlib.pyplot as plt
+                try:
+                    circ = self.circuit_builder()
+                    circ.draw(output = style, filename = save)
+                    plt.show()
+                except:
+                    print("pylatexenc not installed")
+            except:
+                print("matplotlib package not installed")
+        elif style == 'text':
+            circ = self.circuit_builder()
+            circ.draw(output = style, filename = save)
+        elif style == 'latex_source':
+            circ = self.circuit_builder()
+            circ.draw(output = style, filename = save)
+
+    
+    def qiskit_stabilizers(self):
+        """
+        Asks Qiskit to return the stabilizers
+
+        :return: A qiskit stabilizer state representation
+        :rtype: StabilizerState (qiskit)
+
         """
         circ = self.circuit_builder()
-        circ.draw('mpl')
-        plt.show()
+        stab = StabilizerState(circ)
+        return stab
+
+    def stabilizer_measurement(self):
+        """
+        A circuit to implement the circuit and then to measure the associated stabilizers.
+
+        :return: A qiskit circuit for measureing stabilizer
+        :rtype: StabilizerState (qiskit)
+
+        """
+        qs = QuantumCircuit(2*self.size)
+        bits = []
+        for i in range(self.size):
+            bits.append(i)
+        reg = ClassicalRegister(self.size)
+        qs.add_register(reg)
+        stabs = self.stabilizers()
+        for i in range(self.size):
+            for j in range(self.size):
+                if stabs[i][j]=='X':
+                    qs.cx(self.size+i,j)
+                elif stabs[i][j]=='Z':
+                    qs.cz(self.size+i,j)
+                elif stabs[i][j]=='Y':
+                    qs.cz(self.size+i,j)
+        for i in range(self.size):
+            if self.signvector[i]==1:
+                qs.x(self.size+i)
+        for i in range(self.size):
+            qs.measure(i+self.size,i)
+
+        return qs
+    
+    def build_and_measure(self):
+        circ = self.circuit_builder()
+        qs = QuantumCircuit(2*self.size)
+        bits = []
+        for i in range(self.size):
+            bits.append(i)
+        qs = qs.compose(circ,bits)
+        reg = ClassicalRegister(self.size)
+        qs.add_register(reg)
+        qs.barrier()
+        stabs = self.stabilizers()
+        for i in range(self.size):
+            for j in range(self.size):
+                if stabs[i][j]=='X':
+                    qs.cx(self.size+i,j)
+                elif stabs[i][j]=='Z':
+                    qs.cz(self.size+i,j)
+                elif stabs[i][j]=='Y':
+                    qs.cz(self.size+i,j)
+        for i in range(self.size):
+            if self.signvector[i]==1:
+                qs.x(self.size+i)
+        for i in range(self.size):
+            qs.measure(i+self.size,i)
+        
+        return qs
+        
+
 
 def grapher(edgelist):
     """
@@ -399,7 +533,7 @@ def grapher(edgelist):
     Parameters
     ----------
     edgelist : list
-        A list that denotes all the connections in a graph state. The edgelist is a nested list, with each inner list containing two elements, the numbers of the qubits that are connected.
+        A list that denotes all the connections inp a graph state. The edgelist is a nested list, with each inner list containing two elements, the numbers of the qubits that are connected.
 
     Returns
     -------
