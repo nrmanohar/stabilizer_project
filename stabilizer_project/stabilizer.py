@@ -21,7 +21,7 @@ class Stabilizer:
             n = 2
             stabs = 'XX,ZZ'
         
-        if n is not None and stabs is None:
+        elif n is not None and stabs is None:
             stabs = []
             for i in range(n):
                 str = ''
@@ -31,6 +31,8 @@ class Stabilizer:
                     else:
                         str = str+'I'
                 stabs.append(str)
+        
+
         self.size = n
         try:
             self.__stab = stabs.split(',')
@@ -309,19 +311,35 @@ class Stabilizer:
         Multiplies two stabilizers in the tableau together, specifying a new stabilizer, and puts them into the second row
 
         """
+        stabs=self.stabilizers()
+        stab1 = stabs[row1]
+        stab2 = stabs[row2]
+        stab1 = stab1.lstrip('-')
+        stab2 = stab2.lstrip('-')
+        phase = np.ones(self.size, dtype=complex)
+        for i in range(self.size):
+            if stab1[i]=='Z' and stab2[i]=="X":
+                phase[i]=np.complex(1j)*phase[i]
+            elif stab1[i]=='X' and stab2[i]=="Z":
+                phase[i]=np.complex(-1j)*phase[i]
+            elif stab1[i]=='Y' and stab2[i]=="Z":
+                phase[i]=np.complex(1j)*phase[i]
+            elif stab1[i]=='Z' and stab2[i]=="Y":
+                phase[i]=np.complex(-1j)*phase[i]
+            elif stab1[i]=='X' and stab2[i]=="Y":
+                phase[i]=np.complex(1j)*phase[i]
+            elif stab1[i]=='Y' and stab2[i]=="X":
+                phase[i]=np.complex(-1j)*phase[i]
+        toggler = 1
+        for i in range(self.size):
+            toggler = toggler*phase[i]
+        toggler = (1-1*np.real(toggler))/2
+        self.signvector[row2]=(self.signvector[row1]+self.signvector[row2]+toggler)%2
         for i in range(2*self.size):
             self.tab[row2,i]=(self.tab[row2,i]+self.tab[row1,i])%2
-        toggler=0
-        for i in range(self.size):
-            if self.tab[row1,i]==self.tab[row2,i] and self.tab[row1,i+self.size]==self.tab[row2,i+self.size]:
-                toggler = toggler
-            elif (self.tab[row1,i+self.size]==0 and self.tab[row1,i]==0) or (self.tab[row2,i+self.size]==0 and self.tab[row2,i]==0):
-                toggler = toggler
-            else:
-                toggler = toggler+1
-        print(toggler)
-        flipper = (toggler%4)/2
-        self.signvector[row2]=(self.signvector[row2]+flipper)%2
+        
+            
+
     def circuit_builder(self):
         """
         Uses reverse operations to build the stabilizer state
