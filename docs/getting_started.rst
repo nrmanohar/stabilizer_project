@@ -12,7 +12,6 @@ To install stabilizer_project, you will need an environment with the following p
 * Qiskit
 * Matplotlib (optional)
 * Pylatexenc (optional)
-* Pdflatex (optional)
 
 Note, you only need Matplotlib and Pylatexenc if you want to plot the circuit. If you just want do do computation, or are fine with the circuits being drawn in the shell by qiskit, these are not required.
 Once you have these packages installed, you can install stabilizer_project in the same environment using
@@ -65,7 +64,37 @@ For a crash course on group theory, a group is a set of elements with an associa
 Where :math:`P(N)\subseteq U(N)` such that all :math:`M\in P` is a tensor product of Pauli matrices. We say this is the stabilizer group for the state :math:`|\psi\rangle`. If you want, you can prove that :math:`G` is in fact a group. However, this doesn't really help us, since can be a very large set. But we have something else to help us.
 Every group has a set of *generators*. We denote the set of generators as :math:`S`. We denote :math:`\langle S\rangle` as the set of all combinations of the elements of :math:`S`, and in and of itself form a group. If :math:`G = \langle S\rangle`, we say :math:`S` generates :math:`G`.
 If we choose a generating set carefully, they can form our *representation* of the state. We can use :math:`n` matrices to represent the state instead of a :math:`2^n` size vector.
+
 One important thing to note, the set of stabilizers is not unique. For example, take the standard bell state :math:`|\psi\rangle = \frac{1}{2}(|00\rangle+|11\rangle)`. I can generate it's set of stabilizers from the generating set :math:`S = \{ZZ,XX\}`, but I can also generate the same set from the generators :math:`S=\{XX,-YY\}`
+
+However, an important caveat, your stabilizers must be 'independent' of each other (sort of analogous to Linear Independence). What does that mean? Let's have a stabilizer state :math:`\ket{\psi}` with stabilizers :math:`\{g_1,g_2\ldots g_m\}`
+
+If we generate a group from them we get :math:`G = \langle g_1,g_2\ldots g_m\rangle`
+
+Here's the key, let's generate a group :math:`G' = \langle g_1\ldots g_{i-1},g_{i+1}\ldots g_n\rangle` where we removed one arbitrary generator. No matter which generater we removed, :math:`G'\subset G`. In other words, removing one of the generators reduces the size of your group. If this is true, we say our generators are 'independant.'
+
+For large states, it's hard to determine by inspection. However, this package comes pre-built with verification for independence of generators.
+
+Clifford Operations
+````````````````````
+The Clifford group are the set of all operations that can be formed using CNOT, Phase (denoted as :math:`S` in the package), and Hadamard Gates. It turns out, applying a Clifford unitary on a stabilizer state converts it into another stabilizer state. Moreover, any stabilizer state can be realized from any other stabilizer state by means of clifford operations.
+Now this package also allows for more operations. Consider the Pauli rotations
+
+.. math::
+    \sigma_z = S^2
+
+.. math::
+    \sigma_x = HZH = HS^2H
+
+.. math::
+    \sigma_y = SXS^\dagger=SHZHS^\dagger = SHZHS^3
+
+So every rotation is a Clifford operator, and is thus built into our package. Similarly
+
+.. math::
+    \text{CZ} = (I\otimes H)\text{CNOT}(I\otimes H)
+
+So the default Clifford operations this package utilizes are CNOT, H, S, X, Y, Z, and CZ gates.
 
 Tableau Formalism
 ```````````````````
@@ -76,7 +105,7 @@ This package utilizes a way to represent :math:`S` as an :math:`n\times 2n` matr
     X & Z
     \end{array}\right)
 
-| Where the :math:`i` th row denotes the :math:`i` th stabilizer. Let's examine the :math:`X` and :math:`Y` matrices seperately. Note these are both square :math:`n\times n` matrices. In each of these matrices, the :math:`j` th row denotes the :math:`j` th qubit.
+| Where the :math:`i` th row denotes the :math:`i` th stabilizer. Let's examine the :math:`X` and :math:`Y` matrices separately. Note these are both square :math:`n\times n` matrices. In each of these matrices, the :math:`j` th row denotes the :math:`j` th qubit.
 | Let :math:`S_{i,j}` be the :math:`j` th Pauli of the :math:`i` th stabilizer (For example, if :math:`S_1=XZ` and :math:`S_2=ZX`, then :math:`S_{1,1}=X` and :math:`S_{2,1}=Z`). We denote the following using our Tableau
 
 1. We denote :math:`S_{i,j}=I` as :math:`X_{i,j}=0` and :math:`Z_{i,j}=0`
@@ -93,7 +122,7 @@ However, if you remember, a set of stabilizers for the standard bell state is :m
     \end{array}\right)
 
 | Where the last column represents the signvector.
-| In this package, we use a numpy array to represent our Tableau. As such, we index from 0 to :math:`n-1` rather than from 1 to :math:`n`, and the signvector is a seperate entity from the tableau
+| In this package, we use a numpy array to represent our Tableau. As such, we index from 0 to :math:`n-1` rather than from 1 to :math:`n`, and the signvector is a separate entity from the tableau
 
 Examples
 ----------
@@ -205,7 +234,7 @@ and that generates the output
     ['XZZXI', 'IXZZX', 'XIXZZ', '-ZXIXZ', 'XXXXX']
 
 | which is a lot easier to understand.
-| Now, this might be cool, but how does one realize these states on a physical quantum computer. Our circuit comes with a circuit builder! Let's say our set of stabilizers are :math:`S=\{XZZXI, IXZZX, XIXZZ, ZXIXZ, XXXXX, ZZZZZ\}` (this is the logical 0 state in the 5 qubit error correction code)
+| Now, this might be cool, but how does one realize these states on a physical quantum computer. Our circuit comes with a circuit builder! Let's say our set of stabilizers are :math:`S=\{XZZXI, IXZZX, XIXZZ, ZXIXZ, ZZZZZ\}` (this is the logical 0 state in the 5 qubit error correction code)
 
 .. code-block:: python
 
@@ -237,6 +266,49 @@ Generates the output
 Which generates the output
 
 .. image:: Plot1.jpeg
-  :width: 600
+  :width: 700
   :alt: Circuit for the logical 0 state of the 5 qubit error correction code
+
+The Inner Workings
+-------------------
+This section is more about the code of the package rather than the theory. Reading this section is not necessary for a background to use the package
+
+Verification
+`````````````
+Since a lot of this package is self redundant, there needs to be a lot of verification to make sure your stabilizers are still up to standard
+
+The first check is done by numpy itself. If your stabilizers don't form the right dimensions, it'll break numpy and return a numpy error.
+
+The first real check done is to check whether the number of Pauli's in a stabilizer matches the number of stabilizers
+
+The second check done by the package is an empty column check. That basically means whether or not you have a free qubit, which is not a unique state. 
+
+The third check is commuter check, which would take :math:`\mathcal{O}(n^2)` time, checks that each stabilizer commutes with each other stabilizer. 
+
+The fourth and final check is linear independence. There's a theorem in Nielson and Chuang that says the generators are independent if and only if the rows of the tableau are linearly independent. Utilizing them in conjunction will force all of our stabilizers to be valid to describe a unique state.
+
+Clifford Manipulations
+```````````````````````
+Clifford manipulations on Tableau are known, so the package just implements them. There are many papers and textbooks that have them described, the only work done by hand was checking signs.
+
+Circuit builder
+`````````````````
+This is the most challenging and difficult part of the package. The basic idea is to utilize the fact that every stabilizer state :math:`\ket{\psi}` can be converted to a graph state :math:`\ket{g}`
+
+.. math::
+    \ket{\psi}\overset{\text{Clifford}}{\rightarrow} \ket{g}
+
+And graph states have known generation schemes that if you undo gets you from the graph state :math:`\ket{g}` the :math:`\ket{0}^{\otimes n}`
+
+.. math::
+    \ket{g}\overset{\text{Clifford}}{\rightarrow}\ket{0}^{\otimes n}
+
+So the idea is to combine them to obtain a set of transformations that transforms
+
+.. math::
+    \ket{\psi}\overset{\text{Clifford}}{\rightarrow}\ket{0}^{\otimes n}
+
+Then if you reverse the order of the transformations (and replace any :math:`S` with :math:`S^\dagger`) you get the generation scheme from the :math:`\ket{0}^{\otimes n}` to the target stabilizer state :math:`\ket{\psi}`
+
+However, systematically converting from a stabilizer state to a graph state is non-trivial. There are various steps the algorithm takes relating to manipulating the tableau to convert it to a graph state, but since graph states have very well defined Tableau representations, a failure is heralded.
 

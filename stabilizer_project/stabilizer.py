@@ -12,39 +12,35 @@ class Stabilizer:
 
     :param stabs: The stabilizers, either in a string or a list, in the format 'XX,-YY' or '[XX,-YY]' (case sensitive). Optional
     :type stabs: list or string, optional
+
+    :ivar size: The number of qubits, initial value: n
+    :ivar __stabs: The stabilizers of the state, initial value: stabs (note, this is a dunder attribute, can't be directly called outside the class. There's a method to do that instead)
+    :ivar tab: The tableau of the state
+    :ivar signvector: The signvector of the state
+    :ivar gauss: A nxn Gaussian matrix (used for empty_column calculations)
+    
     '''
-    def __init__(self, n = None, stabs = None):
+    def __init__(self, n = None, stabs = None, edgelist = None):
         """Constructor method
 
         """
-        if n is None and stabs is None:
-            n = 2
-            stabs = 'XX,ZZ'
-        
-        elif n is not None and stabs is None:
-            stabs = []
-            for i in range(n):
-                str = ''
-                for j in range(n):
-                    if i==j:
-                        str = str+'Z'
-                    else:
-                        str = str+'I'
-                stabs.append(str)
-        
+        if edgelist is None:    
+            if n is None and stabs is None:
+                n = 2
+                stabs = 'XX,ZZ'
+            
+            elif n is not None and stabs is None:
+                stabs = []
+                for i in range(n):
+                    str = ''
+                    for j in range(n):
+                        if i==j:
+                            str = str+'Z'
+                        else:
+                            str = str+'I'
+                    stabs.append(str)
+            
 
-        self.size = n
-        try:
-            self.__stab = stabs.split(',')
-        except:
-            self.__stab = stabs
-        list = self.tableau()
-        self.tab = list[0]
-        self.signvector = list[1]
-        while self.empty_column():
-            print("Invalid input, free qubit (all stabilizers for some qubit is the identity)")
-            n = int(input("Number of Qubits "))
-            stabs = input("Stabilizers ")
             self.size = n
             try:
                 self.__stab = stabs.split(',')
@@ -53,30 +49,65 @@ class Stabilizer:
             list = self.tableau()
             self.tab = list[0]
             self.signvector = list[1]
-        while not self.commuter():
-            print("Invalid Inputs, Stabilizers do not commute")
-            n = int(input("Number of Qubits "))
-            stabs = input("Stabilizers ")
-            self.size = n
-            try:
-                self.__stab = stabs.split(',')
-            except:
-                self.__stab = stabs
-            list = self.tableau()
-            self.tab = list[0]
-            self.signvector = list[1]
+            while not self.square():
+                print("Invalid input, number of qubits not equal to number of stabilizers")
+                n = int(input("Number of Qubits "))
+                stabs = input("Stabilizers ")
+                self.size = n
+                try:
+                    self.__stab = stabs.split(',')
+                except:
+                    self.__stab = stabs
+                list = self.tableau()
+                self.tab = list[0]
+                self.signvector = list[1]
+            while self.empty_column():
+                print("Invalid input, free qubit (all stabilizers for some qubit is the identity)")
+                n = int(input("Number of Qubits "))
+                stabs = input("Stabilizers ")
+                self.size = n
+                try:
+                    self.__stab = stabs.split(',')
+                except:
+                    self.__stab = stabs
+                list = self.tableau()
+                self.tab = list[0]
+                self.signvector = list[1]
+            while not self.commuter():
+                print("Invalid Inputs, Stabilizers do not commute")
+                n = int(input("Number of Qubits "))
+                stabs = input("Stabilizers ")
+                self.size = n
+                try:
+                    self.__stab = stabs.split(',')
+                except:
+                    self.__stab = stabs
+                list = self.tableau()
+                self.tab = list[0]
+                self.signvector = list[1]
+            while not self.linear_independence():
+                print("Invalid Inputs, Stabilizers are not independant")
+                n = int(input("Number of Qubits "))
+                stabs = input("Stabilizers ")
+                self.size = n
+                try:
+                    self.__stab = stabs.split(',')
+                except:
+                    self.__stab = stabs
+                list = self.tableau()
+                self.tab = list[0]
+                self.signvector = list[1]
+        else:
+            self.graph_state()
 
-    def initialize(self, n=2):
-        stabs = []
-        for i in range(n):
-            str = ''
-            for j in range(n):
-                if i==j:
-                    str = str+'Z'
-                else:
-                    str = str+'I'
-            stabs.append(str)
-        
+    def square(self):
+        toggler = True
+        for i in range(len(self.__stab)):
+            str = self.__stab[i]
+            str = str.lstrip('-')
+            if len(str)!=len(self.__stab):
+                return False
+        return toggler
 
     def commuter(self):
         """
@@ -106,6 +137,27 @@ class Stabilizer:
         :rtype: int
         """
         return self.size
+    
+    def graph_state(self,edgelist = [[0,1],[1,2],[2,3],[3,4],[4,0]]):
+        num=0
+        for i in range(len(edgelist)):
+            for j in range(len(edgelist[i])):
+                if edgelist[i][j]>num:
+                    num = edgelist[i][j]
+        self.size = num+1
+        tab = np.zeros(2*self.size*self.size)
+        tab = tab.reshape(self.size,2*self.size)
+        for i in range(self.size):
+            tab[i,i]=1
+        for i in range(len(edgelist)):
+            q1 = edgelist[i][0]
+            q2 = edgelist[i][1]
+            tab[q1,q2+self.size]=1
+            tab[q2,q1+self.size]=1
+        sign = np.zeros(self.size)
+        self.tab = tab
+        self.signvector = sign
+    
     def tableau(self):
         """
         Converts the stabilizers to a tableau and signvector
@@ -189,6 +241,18 @@ class Stabilizer:
         list = self.tableau()
         self.tab = list[0]
         self.signvector = list[1]
+        while not self.square():
+            print("Invalid input, number of qubits not equal to number of stabilizers")
+            n = int(input("Number of Qubits "))
+            stabs = input("Stabilizers ")
+            self.size = n
+            try:
+                self.__stab = stabs.split(',')
+            except:
+                self.__stab = stabs
+            list = self.tableau()
+            self.tab = list[0]
+            self.signvector = list[1]
         while self.empty_column():
             print("Invalid input, free qubit (all stabilizers for some qubit is the identity)")
             n = int(input("Number of Qubits "))
@@ -203,6 +267,18 @@ class Stabilizer:
             self.signvector = list[1]
         while not self.commuter():
             print("Invalid Inputs, Stabilizers do not commute")
+            n = int(input("Number of Qubits "))
+            stabs = input("Stabilizers ")
+            self.size = n
+            try:
+                self.__stab = stabs.split(',')
+            except:
+                self.__stab = stabs
+            list = self.tableau()
+            self.tab = list[0]
+            self.signvector = list[1]
+        while not self.linear_independence():
+            print("Invalid Inputs, Stabilizers are not independant")
             n = int(input("Number of Qubits "))
             stabs = input("Stabilizers ")
             self.size = n
@@ -305,6 +381,17 @@ class Stabilizer:
                 empty = True
         return empty
 
+    def linear_independence(self):
+        """
+        Checks if the generators are linearly independent
+
+        """
+        rank = np.linalg.matrix_rank(self.tab)
+        rank = int(rank)
+        if rank == self.size:
+            return True
+        else:
+            return False
 
     def row_add(self,row1,row2):
         """
@@ -337,7 +424,7 @@ class Stabilizer:
         self.signvector[row2]=(self.signvector[row1]+self.signvector[row2]+toggler)%2
         for i in range(2*self.size):
             self.tab[row2,i]=(self.tab[row2,i]+self.tab[row1,i])%2
-        
+     
             
 
     def circuit_builder(self):
@@ -461,7 +548,7 @@ class Stabilizer:
                     circ.draw(output = style, filename = save)
                     plt.show()
                 except:
-                    print("pylatexenc not installed")
+                    print("pylatexenc likely not installed")
             except:
                 print("matplotlib package not installed")
         elif style == 'text':
@@ -542,8 +629,6 @@ class Stabilizer:
         
         return qs
         
-
-
 def grapher(edgelist):
     """
     Function that can graph a graph state provided an edgelist
