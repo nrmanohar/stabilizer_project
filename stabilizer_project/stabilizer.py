@@ -142,6 +142,13 @@ class Stabilizer:
         return self.size
     
     def graph_state(self,edgelist = [[0,1],[1,2],[2,3],[3,4],[4,0]]):
+        """
+        Generates a graph state based on inputed edgelist
+
+        :param edgelist: The list of connections, defaults to [[0,1],[1,2],[2,3],[3,4],[4,0]]
+        :type edgelist: Nested list
+
+        """
         num=0
         for i in range(len(edgelist)):
             for j in range(len(edgelist[i])):
