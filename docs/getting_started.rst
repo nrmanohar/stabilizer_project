@@ -268,6 +268,33 @@ Which generates the output
 .. image:: Plot1.jpeg
   :width: 700
   :alt: Circuit for the logical 0 state of the 5 qubit error correction code
+  :align: left
+
+One of the most used applications of stabilizer formalism is defining and manipulating graph states. This package comes with that too!
+
+We need an edgelist
+
+.. code-block:: python
+
+    edgelist = [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0]]
+
+Each sublist represents a connection, between the two qubits numbered (indexed from 0 to :math:`n`)
+
+Now if type
+
+.. code-block:: python
+
+    state = Stabilizer()
+    state.graph_state(edgelist)
+    state.draw_circuit()
+
+Generates the output
+
+.. image:: Plot2.jpeg
+  :width: 700
+  :alt: A graph state with edges (0,1), (1,2), (2,3), (3,4), (4,5), and (5,0)
+  :align: left
+
 
 The Inner Workings
 -------------------

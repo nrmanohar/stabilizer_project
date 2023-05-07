@@ -13,11 +13,14 @@ class Stabilizer:
     :param stabs: The stabilizers, either in a string or a list, in the format 'XX,-YY' or '[XX,-YY]' (case sensitive). Optional
     :type stabs: list or string, optional
 
-    :ivar size: The number of qubits, initial value: n
-    :ivar __stabs: The stabilizers of the state, initial value: stabs (note, this is a dunder attribute, can't be directly called outside the class. There's a method to do that instead)
-    :ivar tab: The tableau of the state
-    :ivar signvector: The signvector of the state
-    :ivar gauss: A nxn Gaussian matrix (used for empty_column calculations)
+    :param edgelist: A list of edges for a graph state. Optional
+    :type edgelist: List
+
+    :cvar size: The number of qubits, initial value: n
+    :cvar __stabs: The stabilizers of the state, initial value: stabs (note, this is a dunder attribute, can't be directly called outside the class. There's a method to do that instead)
+    :cvar tab: The tableau of the state
+    :cvar signvector: The signvector of the state
+    :cvar gauss: A nxn Gaussian matrix (used for empty_column calculations)
     
     '''
     def __init__(self, n = None, stabs = None, edgelist = None):
