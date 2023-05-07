@@ -583,10 +583,10 @@ class Stabilizer:
 
     def stabilizer_measurement(self):
         """
-        A circuit to implement the circuit and then to measure the associated stabilizers.
+        A circuit t-o measure the associated stabilizers of this state
 
         :return: A qiskit circuit for measureing stabilizer
-        :rtype: StabilizerState (qiskit)
+        :rtype: QuantumCircuit
 
         """
         qs = QuantumCircuit(2*self.size)
@@ -597,13 +597,19 @@ class Stabilizer:
         qs.add_register(reg)
         stabs = self.stabilizers()
         for i in range(self.size):
+            qs.h(self.size+i)
+        for i in range(self.size):
+            stabs[i]=stabs[i].lstrip('-')
             for j in range(self.size):
                 if stabs[i][j]=='X':
                     qs.cx(self.size+i,j)
                 elif stabs[i][j]=='Z':
                     qs.cz(self.size+i,j)
                 elif stabs[i][j]=='Y':
-                    qs.cz(self.size+i,j)
+                    qs.cy(self.size+i,j)
+        
+        for i in range(self.size):
+            qs.h(self.size+i)
         for i in range(self.size):
             if self.signvector[i]==1:
                 qs.x(self.size+i)
@@ -613,6 +619,13 @@ class Stabilizer:
         return qs
     
     def build_and_measure(self):
+        """
+        A circuit to implement the circuit and then to measure the associated stabilizers.
+
+        :return: A qiskit circuit for measureing stabilizer
+        :rtype: QuantumCircuit
+
+        """
         circ = self.circuit_builder()
         qs = QuantumCircuit(2*self.size)
         bits = []
@@ -624,13 +637,18 @@ class Stabilizer:
         qs.barrier()
         stabs = self.stabilizers()
         for i in range(self.size):
+            qs.h(self.size+i)
+        for i in range(self.size):
+            stabs[i]=stabs[i].lstrip('-')
             for j in range(self.size):
                 if stabs[i][j]=='X':
                     qs.cx(self.size+i,j)
                 elif stabs[i][j]=='Z':
                     qs.cz(self.size+i,j)
                 elif stabs[i][j]=='Y':
-                    qs.cz(self.size+i,j)
+                    qs.cy(self.size+i,j)
+        for i in range(self.size):
+            qs.h(self.size+i)
         for i in range(self.size):
             if self.signvector[i]==1:
                 qs.x(self.size+i)

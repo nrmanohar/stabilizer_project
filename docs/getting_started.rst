@@ -89,7 +89,7 @@ Now this package also allows for more operations. Consider the Pauli rotations
 .. math::
     \sigma_y = SXS^\dagger=SHZHS^\dagger = SHZHS^3
 
-So every rotation is a Clifford operator, and is thus built into our package. Similarly
+So every :math:`\pi` rotation about an axis is a Clifford operator, and is thus built into our package. Similarly
 
 .. math::
     \text{CZ} = (I\otimes H)\text{CNOT}(I\otimes H)
@@ -266,9 +266,9 @@ Generates the output
 Which generates the output
 
 .. image:: Plot1.jpeg
-  :width: 700
+  :width: 600
   :alt: Circuit for the logical 0 state of the 5 qubit error correction code
-  :align: left
+  
 
 One of the most used applications of stabilizer formalism is defining and manipulating graph states. This package comes with that too!
 
@@ -291,9 +291,50 @@ Now if type
 Generates the output
 
 .. image:: Plot2.jpeg
-  :width: 700
+  :width: 500
   :alt: A graph state with edges (0,1), (1,2), (2,3), (3,4), (4,5), and (5,0)
-  :align: left
+
+
+| Now let's look at stabilizer measurements. Let's make our stabilizer object
+
+.. code-block:: python
+
+    state = Stabilizer(2,'XX,-YY')
+
+For both of the following examples. Now I want the circuit that measures the associated stabilizers. For that, I'll use the stabilizer_measurement() method
+
+.. code-block:: python
+
+    import matplotlib
+    import matplotlib.pyplot as plt
+    
+    circ = state.stabilizer_measurement()
+    circ.draw('mpl')
+    plt.show()
+
+Which generates the output
+
+.. image:: Plot3.jpeg
+  :width: 600
+  :alt: Stabilizer Measurement for XX and -YY
+  
+
+Note, if your state is generated properly, the stabilizer measurement should always return 0's, and the code is set up as such.
+
+Now if I want to build the state from a completely uninitialized state. I can use the build_and_measure() method. Continuing from the block above
+
+.. code-block:: python
+
+    circ = state.build_and_measure()
+    circ.draw('mpl')
+    plt.show()
+
+Which generates the output
+
+.. image:: Plot4.jpeg
+  :width: 700
+  :alt: Generates the state associated with XX and -YY, then does the stabilizer measurement for XX and -YY
+  
 
 
 The Inner Workings
