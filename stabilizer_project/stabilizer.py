@@ -656,6 +656,25 @@ class Stabilizer:
             qs.measure(i+self.size,i)
         
         return qs
+    def swap(self, row1,row2):
+        """
+        Swaps two rows in the stabilizer
+
+        :param r1: The first row
+        :type type: int
+
+        :param r2: The second row
+        :type q1: int
+        """
+        self.tab[[row1, row2]] = self.tab[[row2, row1]]
+        self.signvector[[row1, row2]] = self.signvector[[row2, row1]]
+    def flip(self):
+        """
+        Flips the tableau over
+
+        """
+        self.tab = np.flip(self.tab,axis=0)
+        self.signvector = np.flip(self.signvector,axis=0)
         
 def grapher(edgelist):
     """

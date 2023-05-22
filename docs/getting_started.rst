@@ -335,7 +335,43 @@ Which generates the output
   :width: 700
   :alt: Generates the state associated with XX and -YY, then does the stabilizer measurement for XX and -YY
   
+For graph list, we can use the edgelist constructor. Let's make a hexagonal ring
 
+.. image:: Plot5.jpg
+  :width: 700
+  :alt: Hexagonal Ring graph
+
+This corresponds to an edgelist of [0,1;1,2;2,3;3,4;4,5;5,0]
+
+.. code-block:: python
+
+    state = Stabilizer(edgelist = [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0]])
+    state.report()
+
+Which generates the output
+
+::
+
+    [[1. 0. 0. 0. 0. 0. 1. 0. 0. 1.]
+     [0. 1. 0. 0. 0. 1. 0. 1. 0. 0.]
+     [0. 0. 1. 0. 0. 0. 1. 0. 1. 0.]
+     [0. 0. 0. 1. 0. 0. 0. 1. 0. 1.]
+     [0. 0. 0. 0. 1. 1. 0. 0. 1. 0.]]
+    [0. 0. 0. 0. 0.]
+
+If we write
+
+.. code-block:: python
+
+    stabs=state.stabilizers()
+    print(stabs)
+
+We get
+
+::
+
+    ['XZIIZ', 'ZXZII', 'IZXZI', 'IIZXZ', 'ZIIZX']
+ 
 
 The Inner Workings
 -------------------
