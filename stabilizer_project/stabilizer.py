@@ -1,5 +1,6 @@
 "Contains the classes and function to manipulate stabilizer and graph states"
 import numpy as np
+import math
 from qiskit import QuantumCircuit, ClassicalRegister
 from qiskit.quantum_info import StabilizerState
 
@@ -101,7 +102,7 @@ class Stabilizer:
                 self.tab = list[0]
                 self.signvector = list[1]
         else:
-            self.graph_state()
+            self.graph_state(edgelist = edgelist)
 
     def square(self):
         toggler = True
@@ -219,7 +220,7 @@ class Stabilizer:
                     str = str+"Y"
             self.__stab.append(str)
         return self.__stab
-    def new_stab(self,size=None,newstabs=None):
+    def new_stab(self,size=None,newstabs=None, ignore_commute = False):
         """
         Resets the stabilizer and new tableau associated with it
 
@@ -275,7 +276,7 @@ class Stabilizer:
             list = self.tableau()
             self.tab = list[0]
             self.signvector = list[1]
-        while not self.commuter():
+        while not self.commuter() and not ignore_commute:
             print("Invalid Inputs, Stabilizers do not commute")
             n = int(input("Number of Qubits "))
             stabs = input("Stabilizers ")
@@ -323,6 +324,8 @@ class Stabilizer:
         elif type.lower() == 'cnot':
             if q2 == None:
                 print('Recall method and specify second qubit')
+            elif q1 == q2:
+                pass
             else:
                 for i in range(self.size):
                     self.tab[i,q2] = (self.tab[i,q1]+self.tab[i,q2])%2
@@ -356,6 +359,60 @@ class Stabilizer:
                 self.clifford('h', q2)
         else:
             print("Something went wrong, make sure you inputted a valid type. Valid types are 'H' for Hadamard, 'S' for the phase gate, 'CNOT' for the Control Not, 'CZ' for the Control Z.")
+    
+    def row_commute(self, stab1, stab2):
+        if len(stab1)!=len(stab2):
+            print("Your stabilizers aren't of same length")
+            return
+        stab1 = stab1.lstrip('-')
+        stab2 = stab2.lstrip('-')
+        toggler = 0
+        for i in range(len(stab1)):
+            if stab1[i] != 'I' and stab2[i] != 'I' and stab1[i] != stab2[i]:
+                toggler+= 1
+        if toggler%2 == 0:
+            return True
+        else:
+            return False
+    
+    def measurement(self, stabilizers, outcomes=None):
+        try:
+            stabilizers = stabilizers.split(',')
+        except:
+            stabilizers = list(stabilizers)
+
+        for i in range(len(stabilizers)):
+            if len(stabilizers[i])!= self.size:
+                print('Stabilizers are wrong, inaccurate size')
+                return
+
+        if outcomes == None:
+            outcomes = [0 for i in range(len(stabilizers))]
+        stabs = self.stabilizers()
+        for i in range(len(stabilizers)):
+            for j in range(len(stabs)):
+                if not self.row_commute(stabs[j],stabilizers[i]):
+                    index = j
+                    break
+            try:
+                for k in range(index+1,len(stabs)):
+                    if not self.row_commute(stabs[k],stabilizers[i]):
+                        self.row_add(index,k)
+            except:
+                pass
+
+            stabs = self.stabilizers()
+            if outcomes[i]==1:
+                stabilizers[i] = '-'+stabilizers[i]
+            try:
+                stabs[index]=stabilizers[i]
+            except:
+                pass
+            self.new_stab(self.size,stabs,True)
+
+
+
+
     def report(self):
         """
         Prints the tableau and the signvector
@@ -433,9 +490,7 @@ class Stabilizer:
         toggler = (1-1*np.real(toggler))/2
         self.signvector[row2]=(self.signvector[row1]+self.signvector[row2]+toggler)%2
         for i in range(2*self.size):
-            self.tab[row2,i]=(self.tab[row2,i]+self.tab[row1,i])%2
-     
-            
+            self.tab[row2,i]=(self.tab[row2,i]+self.tab[row1,i])%2     
 
     def circuit_builder(self):
         """
@@ -583,7 +638,7 @@ class Stabilizer:
 
     def stabilizer_measurement(self):
         """
-        A circuit t-o measure the associated stabilizers of this state
+        A circuit to measure the associated stabilizers of this state
 
         :return: A qiskit circuit for measureing stabilizer
         :rtype: QuantumCircuit
@@ -656,7 +711,7 @@ class Stabilizer:
             qs.measure(i+self.size,i)
         
         return qs
-    def swap(self, row1,row2):
+    def swap(self, r1,r2):
         """
         Swaps two rows in the stabilizer
 
@@ -666,8 +721,8 @@ class Stabilizer:
         :param r2: The second row
         :type q1: int
         """
-        self.tab[[row1, row2]] = self.tab[[row2, row1]]
-        self.signvector[[row1, row2]] = self.signvector[[row2, row1]]
+        self.tab[[r1, r2]] = self.tab[[r2, r1]]
+        self.signvector[[r1, r2]] = self.signvector[[r2, r1]]
     def flip(self):
         """
         Flips the tableau over
@@ -675,6 +730,15 @@ class Stabilizer:
         """
         self.tab = np.flip(self.tab,axis=0)
         self.signvector = np.flip(self.signvector,axis=0)
+    def clone(self):
+        """
+        Generates a copy of the stabilizer state
+
+        """
+        newstab = self.stabilizers()
+        int = self.size
+        state = Stabilizer(n=int,stabs=newstab)
+        return state
         
 def grapher(edgelist):
     """
@@ -703,6 +767,280 @@ def grapher(edgelist):
     stab = StabilizerState(circuit)
     print(stab)
     return circuit
+
+def rref(state):
+    """
+    Function that brings a stabilizer state into rref form
+
+    Parameters
+    ----------
+    state : Stabilizer
+        A state that you wish to bring into rref form
+    """
+    N=state.size
+    K=N
+    KU=0
+    NL=0
+    while NL<N-1 and KU< K-1:
+        stabs = state.stabilizers()
+        stabs = remove_sign(stabs)
+        column_stabs = []
+        for k in range(KU,K):
+            column_stabs.append(stabs[k][NL])
+        identity = False
+        oneitem = False
+        twoitem = False
+        distinct_pauli = set(column_stabs)
+        if len(distinct_pauli)==1:
+            if 'I' in distinct_pauli:
+                identity = True
+            else:
+                oneitem = True
+        elif len(distinct_pauli)==2:
+            if 'I' in distinct_pauli:
+                oneitem = True
+            else:
+                twoitem = True
+        else:
+            twoitem = True
+        if identity:
+            NL+=1
+        elif oneitem:
+            for k in range(KU,K):
+                if stabs[k][NL]!='I':
+                    state.swap(KU,k)
+                    break
+            stabs = state.stabilizers()
+            stabs = remove_sign(stabs)
+            for k in range(KU+1,K):
+                if stabs[k][NL]!='I':
+                    state.row_add(KU,k)
+            NL+=1
+            KU+=1
+        elif twoitem:
+            for k in range(KU,K):
+                if stabs[k][NL]!='I':
+                    reference1 = stabs[k][NL]
+                    state.swap(KU,k)
+                    break
+            for k in range(KU,K):
+                if stabs[k][NL]!='I' and stabs[k][NL]!= reference1:
+                    reference2 = stabs[k][NL]
+                    state.swap(KU+1,k)
+                    break
+            stabs = state.stabilizers()
+            stabs = remove_sign(stabs)
+            for k in range(KU+2,K):
+                if stabs[k][NL]=='I':
+                    continue
+                elif stabs[k][NL]==reference1:
+                    state.row_add(KU,k)
+                elif stabs[k][NL]==reference2:
+                    state.row_add(KU+1,k)
+                elif stabs[k][NL]!='I':
+                    state.row_add(KU,k)
+                    state.row_add(KU+1,k)
+            NL+=1
+            KU+=2
+
+def heightfunction(state):
+    """
+    Function that calculates the height function of a graph state
+
+    Parameters
+    ----------
+    state : Stabilizer
+        The state you wish to calculate the height function of
+
+    Returns
+    -------
+    height : list
+        The height function evaluated at different values of x
+    """
+    rref(state)
+    state.gaussian()
+    gauss = state.gauss
+    leftmost = []
+    for i in range(state.size):
+        for j in range(state.size):
+            if gauss[i,j]!=0:
+                leftmost.append(j+1)
+                break
+    height = []
+    for i in range(state.size+1):
+        count = sum(j > i for j in leftmost)
+        height.append(state.size-i-count)
+    return height
+
+def plot_height(state):
+    """
+    A function that plots the height function
+
+    Parameters
+    ----------
+    state : Stabilizer
+        The state you wish to plot the height function of
+    """
+    try:
+        height = heightfunction(state)
+        x_val = []
+        for i in range(state.size+1):
+            x_val.append(i)
+        tickers = range(math.floor(min(height)), math.ceil(max(height))+1)
+        plt.grid(color = 'blue', linewidth = 0.5)
+        plt.plot(x_val,height,color='blue')
+        plt.scatter(x_val,height,color='blue')
+        plt.yticks(tickers)
+        plt.title('Target Height Function')
+        plt.xlabel('x')
+        plt.ylabel('h(x)')
+        plt.show()
+    except:
+        print('Matplotlib likely not installed')
+
+def num_emitters(state):
+    """
+    A function that calculates the number of emitters required to generate this particular state
+
+    Parameters
+    ----------
+    state : Stabilizer
+        The target state you wish to find the number of emitters required to generate photonically
+    """
+    height = heightfunction(state)
+    emitters = max(height)
+    return emitters
+
+def photonic_circuit_solver(state):
+    """
+    A circuit solver to generate a particular graph state
+
+    Parameters
+    ----------
+    state : Stabilizer
+        The target state, such as a resource state, you wish to generate photonically
+    """
+    stabs = state.stabilizers()
+    n_e = num_emitters(state)
+    n_p = state.size
+    N = n_p+n_e
+    for i in range(len(stabs)):
+        stabs[i]+=n_e*'I'
+    for i in range(n_e):
+        stabs.append(n_p*'I'+i*'I'+'Z'+(n_e-i-1)*'I')
+    target_state = Stabilizer(n_e+n_p,stabs)
+    protocol = []
+    for j in range(n_p,0,-1):
+        height = heightfunction(target_state)
+        photonindex = j-1
+        d = height[j]-height[j-1]
+        if d<0:
+            'Time Reverse Measurement'
+            gauss = target_state.gauss.tolist()
+            indexfinder = [0 for i in range(N)]
+            index=-1
+            for i in range(n_p,N):
+                indexfinder[i] = 1
+                if indexfinder in gauss:
+                    index = i
+                    for k in range(N):
+                        if indexfinder == gauss[k]:
+                            a = k 
+                indexfinder[i] = 0
+            if index != -1:
+                stab = [target_state.tab[a,index],target_state.tab[a,index+N]]
+                if stab == [0,1]:
+                    if target_state.signvector[a]==1:
+                        target_state.clifford('X',index)
+                        protocol.append(['X',index])
+                elif stab == [1,0]:
+                    if target_state.signvector[a]==1:
+                        target_state.clifford('Z',index)
+                        protocol.append(['Z',index])
+                    target_state.clifford('H',index)
+                    protocol.append(['H',index])
+                elif stab == [1,1]:
+                    if target_state.signvector[a]==0:
+                        target_state.clifford('Z',index)
+                        protocol.append(['Z',index])
+                    target_state.clifford('S',index)
+                    protocol.append(['S',index])
+                    target_state.clifford('H',index)
+                    protocol.append(['H',index])
+                protocol.append(['Measure',index,photonindex])
+                target_state.clifford('H',index)
+                target_state.clifford('CNOT',index,photonindex)
+
+            else:
+                'More thorough rotation required'
+
+        'Photon Absoprtion'
+
+        'Identify Stabilizer'
+        for i in range(N):
+            toggler = True
+            for k in range(photonindex):
+                if target_state.tab[i,k]!=0 or target_state.tab[i,k+N]!=0:
+                    toggler = False
+                    break
+            if target_state.tab[i,photonindex]==0 and target_state.tab[i,photonindex+N]==0:
+                toggler = False
+            if toggler:
+                a = i
+                break
+        
+        'Bring into Z'
+
+        for i in range(photonindex,N):
+            stab = [target_state.tab[a,i],target_state.tab[a,N+i]]
+            if stab == [1,0]:
+                protocol.append(['H',i])
+                target_state.clifford('H',i)
+            elif stab == [1,1]:
+                protocol.append(['S',i])
+                target_state.clifford('S',i)
+                protocol.append(['H',i])
+                target_state.clifford('H',i)
+        
+        'Disentangle all but one emitter'
+
+        for i in range(n_p,N):
+            stab = [target_state.tab[a,i],target_state.tab[a,N+i]]
+            if stab == [0,1]:
+                emitter = i
+                break
+        
+        'Absorb Photon'
+
+        for i in range(emitter+1,N):
+            if [target_state.tab[a,i],target_state.tab[a,N+i]]== [0,1]:
+                protocol.append(['CNOT',i,emitter])
+                target_state.clifford('CNOT',i,emitter)
+        protocol.append(['Absorption',emitter,photonindex])
+        target_state.clifford('CNOT',emitter,photonindex)
+
+        'Clear out stabilizers'
+
+        for i in range(N):
+            if i!=a and [target_state.tab[i,photonindex],target_state.tab[i,N+photonindex]]!=[0,0]:
+                target_state.row_add(a,i)
+
+    rref(target_state)
+
+    for i in range(n_p):
+        if target_state.signvector[i]==1:
+            target_state.clifford('X',i)
+            protocol.append([['X'],i])
+    return protocol.reverse()
+
+def remove_sign(stabs):
+    for i in range(len(stabs)):
+        stabs[i] = stabs[i].lstrip('-')
+    return stabs
+
+
+
+
 
 if __name__ == "__main__":
     # Do something if this file is invoked on its own

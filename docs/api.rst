@@ -13,6 +13,16 @@ API Documentation
 
 .. autofunction:: grapher
 
+.. autofunction:: rref
+
+.. autofunction:: heightfunction
+
+.. autofunction:: plot_height
+
+.. autofunction:: num_emitters
+
+.. autofunction:: photonic_circuit_solver
+
 .. autoclass:: Stabilizer 
    :members:
 

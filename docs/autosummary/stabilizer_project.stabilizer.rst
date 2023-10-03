@@ -14,6 +14,12 @@
    .. autosummary::
    
       grapher
+      heightfunction
+      num_emitters
+      photonic_circuit_solver
+      plot_height
+      remove_sign
+      rref
    
    
 
